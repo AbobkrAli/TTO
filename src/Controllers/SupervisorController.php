@@ -33,7 +33,7 @@ class SupervisorController extends Controller
   {
     $users = $this->userModel->getAll();
     $departments = $this->departmentModel->getAllWithCounts();
-    
+
     $this->view('supervisor/dashboard', [
       'users' => $users,
       'departments' => $departments,
@@ -108,7 +108,7 @@ class SupervisorController extends Controller
   public function departments()
   {
     $departments = $this->departmentModel->getAllWithCounts();
-    
+
     $this->view('supervisor/departments', [
       'departments' => $departments,
       'title' => 'Department Management'
@@ -123,15 +123,15 @@ class SupervisorController extends Controller
   public function departmentDetails($id)
   {
     $department = $this->departmentModel->getById($id);
-    
+
     if (!$department) {
       $_SESSION['error'] = 'Department not found';
       redirect('/supervisor/departments');
     }
-    
+
     // Get teachers in this department
     $teachers = $this->userModel->getByDepartmentAndRole($id, 'teacher');
-    
+
     $this->view('supervisor/department_details', [
       'department' => $department,
       'teachers' => $teachers,
@@ -156,22 +156,22 @@ class SupervisorController extends Controller
   public function editDepartment($id)
   {
     $department = $this->departmentModel->getById($id);
-    
+
     if (!$department) {
       $_SESSION['error'] = 'Department not found';
       redirect('/supervisor/departments');
     }
-    
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // Validate input
       $name = trim($_POST['name'] ?? '');
-      
+
       if (empty($name)) {
         $error = 'Department name is required';
         require_once dirname(__DIR__) . '/Views/supervisor/departments/edit.php';
         return;
       }
-      
+
       // Update department
       if ($this->departmentModel->update($id, $name)) {
         $_SESSION['success'] = 'Department updated successfully';
@@ -195,28 +195,28 @@ class SupervisorController extends Controller
   {
     // Check if department exists
     $department = $this->departmentModel->getById($id);
-    
+
     if (!$department) {
       $_SESSION['error'] = 'Department not found';
       redirect('/supervisor/departments');
     }
-    
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // Check if department has users
       $teachers = $this->userModel->getByDepartmentAndRole($id, 'teacher');
-      
+
       if (count($teachers) > 0) {
         $_SESSION['error'] = 'Cannot delete department with assigned teachers';
         redirect('/supervisor/departments');
       }
-      
+
       // Delete department
       if ($this->departmentModel->delete($id)) {
         $_SESSION['success'] = 'Department deleted successfully';
       } else {
         $_SESSION['error'] = 'Something went wrong';
       }
-      
+
       redirect('/supervisor/departments');
     } else {
       // Show delete confirmation page
@@ -233,53 +233,78 @@ class SupervisorController extends Controller
   {
     // Get department details
     $department = $this->departmentModel->getById($id);
-    
+
     if (!$department) {
       $_SESSION['error'] = 'Department not found';
       redirect('/supervisor/departments');
     }
-    
+
     // Get teachers in this department
     $teachers = $this->userModel->getByDepartmentAndRole($id, 'teacher');
-    
+
     // Get subjects in this department
     $subjects = $this->subjectModel->getByDepartment($id);
-    
-    // Load view
+
+    // If no subjects, initialize an empty array
+    if (!$subjects) {
+      $subjects = [];
+    }
+
+    // Get selected day from query parameter
+    $selectedDay = $_GET['day'] ?? 'Monday';
+
+    // Load view with selected day
     require_once dirname(__DIR__) . '/Views/supervisor/departments/view.php';
   }
 
-  /* Subject Management Methods */
-  
-  // Add subject to department
+  /**
+   * Add a new subject to a department
+   * 
+   * @param int $departmentId Department ID
+   */
   public function addSubject($departmentId)
   {
-    $department = $this->departmentModel->getById($departmentId);
-    if (!$department) {
-      redirect('/supervisor/departments');
-    }
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $subjectCode = $_POST['subject_code'] ?? '';
-      $subjectName = $_POST['subject_name'] ?? '';
-      $day = $_POST['day'] ?? '';
-      $hour = $_POST['hour'] ?? '';
-      $endTime = $_POST['end_time'] ?? '';
-
-      if (empty($subjectCode) || empty($subjectName) || empty($day) || empty($hour) || empty($endTime)) {
-        $error = "All fields are required";
-        require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/add.php';
-        return;
-      }
-
-      $this->subjectModel->create($subjectCode, $subjectName, $departmentId, $day, $hour, $endTime);
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
       redirect('/supervisor/departments/view/' . $departmentId);
     }
 
-    require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/add.php';
+    // Validate input
+    $code = trim($_POST['code'] ?? '');
+    $name = trim($_POST['name'] ?? '');
+    $day = trim($_POST['day'] ?? '');
+    $hour = trim($_POST['hour'] ?? '');
+
+    if (empty($code) || empty($name) || empty($day) || empty($hour)) {
+      $_SESSION['error'] = 'Subject code, name, day, and hour are required';
+      redirect('/supervisor/departments/view/' . $departmentId);
+    }
+
+    // Validate hour is between 9 and 17
+    $hour = (int) $hour;
+    if ($hour < 9 || $hour > 17) {
+      $_SESSION['error'] = 'Hour must be between 9 and 17';
+      redirect('/supervisor/departments/view/' . $departmentId);
+    }
+
+    try {
+      // Create subject - pass parameters in correct order: code, name, departmentId, day, hour
+      if ($this->subjectModel->create($code, $name, $departmentId, $day, $hour)) {
+        $_SESSION['success'] = 'Subject added successfully';
+      } else {
+        $_SESSION['error'] = 'Failed to add subject';
+      }
+    } catch (\Exception $e) {
+      $_SESSION['error'] = $e->getMessage();
+    }
+
+    redirect('/supervisor/departments/view/' . $departmentId);
   }
 
-  // Edit a subject
+  /**
+   * Edit subject
+   * 
+   * @param int $id Subject ID
+   */
   public function editSubject($id)
   {
     $subject = $this->subjectModel->getById($id);
@@ -334,7 +359,7 @@ class SupervisorController extends Controller
   {
     // Get all users with their department information
     $users = $this->userModel->getAllWithDepartments();
-    
+
     // Load view
     require_once dirname(__DIR__) . '/Views/supervisor/users/index.php';
   }
@@ -347,13 +372,13 @@ class SupervisorController extends Controller
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // Validate input
       $name = trim($_POST['name'] ?? '');
-      
+
       if (empty($name)) {
         $error = 'Department name is required';
         require_once dirname(__DIR__) . '/Views/supervisor/departments/add.php';
         return;
       }
-      
+
       // Add department
       if ($this->departmentModel->create($name)) {
         $_SESSION['success'] = 'Department added successfully';
@@ -381,23 +406,23 @@ class SupervisorController extends Controller
       $_SESSION['error'] = 'Department not found';
       redirect('/supervisor/departments');
     }
-    
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // Only handle creating a new teacher
       $action = $_POST['action'] ?? 'create';
-      
+
       if ($action === 'create') {
         $fullname = $_POST['fullname'] ?? '';
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
         $role = $_POST['role'] ?? 'teacher';
-        
+
         if (empty($fullname) || empty($email) || empty($password)) {
           $error = 'All fields are required';
           require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
           return;
         }
-        
+
         // Check if email already exists
         $existingUser = $this->userModel->getByEmail($email);
         if ($existingUser) {
@@ -405,7 +430,7 @@ class SupervisorController extends Controller
           require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
           return;
         }
-        
+
         // Create the new user
         $userData = [
           'fullname' => $fullname,
@@ -414,7 +439,7 @@ class SupervisorController extends Controller
           'role' => $role,
           'department_id' => $departmentId
         ];
-        
+
         if ($this->userModel->createUser($userData)) {
           $_SESSION['success'] = 'New teacher successfully created and assigned to department';
           redirect('/supervisor/departments/view/' . $departmentId);

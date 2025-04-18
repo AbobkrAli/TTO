@@ -2,7 +2,7 @@
 
 return [
   'host' => 'localhost',
-  'database' => 'php_project',
+  'database' => 'education_management',
   'username' => 'phpuser',
   'password' => 'password123',
   'charset' => 'utf8mb4',

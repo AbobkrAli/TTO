@@ -170,8 +170,7 @@
             <ul class="nav flex-column">
               <?php if (\App\Session::getUserRole() === 'admin'): ?>
                 <li class="nav-item">
-                  <a class="nav-link <?php echo $activePage === 'dashboard' ? 'active' : ''; ?>"
-                    href="/admin/dashboard">
+                  <a class="nav-link <?php echo $activePage === 'dashboard' ? 'active' : ''; ?>" href="/admin/dashboard">
                     <i class="bi bi-speedometer2"></i> Dashboard
                   </a>
                 </li>
@@ -181,7 +180,8 @@
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link <?php echo $activePage === 'departments' ? 'active' : ''; ?>" href="/admin/departments">
+                  <a class="nav-link <?php echo $activePage === 'departments' ? 'active' : ''; ?>"
+                    href="/admin/departments">
                     <i class="bi bi-building"></i> Departments
                   </a>
                 </li>
@@ -198,7 +198,8 @@
                 </li>
               <?php elseif (\App\Session::getUserRole() === 'supervisor'): ?>
                 <li class="nav-item">
-                  <a class="nav-link <?php echo $activePage === 'departments' ? 'active' : ''; ?>" href="/supervisor/departments">
+                  <a class="nav-link <?php echo $activePage === 'departments' ? 'active' : ''; ?>"
+                    href="/supervisor/departments">
                     <i class="bi bi-building"></i> Departments
                   </a>
                 </li>
@@ -207,22 +208,6 @@
                   <a class="nav-link <?php echo $activePage === 'dashboard' ? 'active' : ''; ?>"
                     href="/teacher/dashboard">
                     <i class="bi bi-speedometer2"></i> Dashboard
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link <?php echo $activePage === 'profile' ? 'active' : ''; ?>" href="/teacher/profile">
-                    <i class="bi bi-person"></i> My Profile
-                  </a>
-                </li>
-                <div class="sidebar-divider"></div>
-                <li class="nav-item">
-                  <a class="nav-link" href="#">
-                    <i class="bi bi-calendar3"></i> Schedule
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#">
-                    <i class="bi bi-journal-richtext"></i> Materials
                   </a>
                 </li>
               <?php endif; ?>

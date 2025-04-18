@@ -166,6 +166,53 @@ ob_start();
     margin-right: 10px;
     color: #11998e;
   }
+
+  /* Schedule Table Styles */
+  .schedule-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 1rem;
+  }
+
+  .schedule-table th {
+    background-color: #f8f9fa;
+    padding: 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+  }
+
+  .schedule-table td {
+    padding: 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+  }
+
+  .schedule-table tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .schedule-time {
+    font-weight: 600;
+    color: #11998e;
+  }
+
+  .schedule-course {
+    font-weight: 500;
+  }
+
+  .schedule-room {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
+  .schedule-empty {
+    color: #6c757d;
+    font-style: italic;
+  }
 </style>
 
 <div class="container-fluid">
@@ -175,110 +222,56 @@ ob_start();
     <p>Access your teaching resources and manage your profile from this dashboard.</p>
   </div>
 
-  <div class="row">
-    <!-- Profile Card -->
-    <div class="col-md-6">
-      <div class="card dashboard-card profile-card">
-        <div class="profile-header">
-          <div class="profile-avatar">
-            <?php echo strtoupper(substr($user['fullname'], 0, 1)); ?>
-          </div>
-          <h4><?php echo htmlspecialchars($user['fullname']); ?></h4>
-          <?php if ($user['department']): ?>
-            <span class="department-badge"><?php echo htmlspecialchars($user['department']); ?></span>
-          <?php endif; ?>
-        </div>
-        <div class="profile-info">
-          <div class="profile-info-item">
-            <i class="bi bi-envelope"></i>
-            <div><?php echo htmlspecialchars($user['email']); ?></div>
-          </div>
-          <div class="profile-info-item">
-            <i class="bi bi-person-badge"></i>
-            <div>Teacher</div>
-          </div>
-          <div class="profile-info-item">
-            <i class="bi bi-building"></i>
-            <div>
-              <?php echo $user['department'] ? htmlspecialchars($user['department']) : '<em>Department not assigned</em>'; ?>
-            </div>
-          </div>
-        </div>
-        <div class="profile-actions">
-          <a href="/teacher/profile" class="btn btn-primary">
-            <i class="bi bi-pencil-square"></i> Edit Profile
-          </a>
-        </div>
-      </div>
+  <!-- Department Subjects Section -->
+  <div class="card dashboard-card mt-4">
+    <div class="card-header-custom">
+      <h5><i class="bi bi-book"></i> Department Subjects</h5>
     </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Subject Name</th>
+              <th>Day</th>
+              <th>Time</th>
+              <th>Room</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $allSubjects = [];
+            foreach ($schedule as $day => $subjects) {
+              foreach ($subjects as $subject) {
+                $allSubjects[] = $subject;
+              }
+            }
 
-    <!-- Stats and Navigation Column -->
-    <div class="col-md-6">
-      <!-- Quick Stats Card -->
-      <div class="card dashboard-card mb-4">
-        <div class="card-header-custom">
-          <h5><i class="bi bi-bar-chart"></i> Your Stats</h5>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <div class="stats-card">
-                <i class="bi bi-calendar2-check"></i>
-                <div class="stats-number">0</div>
-                <div class="stats-label">Classes</div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="stats-card">
-                <i class="bi bi-journal-text"></i>
-                <div class="stats-number">0</div>
-                <div class="stats-label">Materials</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            // Remove duplicates based on subject code
+            $uniqueSubjects = [];
+            foreach ($allSubjects as $subject) {
+              $uniqueSubjects[$subject['code']] = $subject;
+            }
 
-      <!-- Navigation Card -->
-      <div class="card dashboard-card nav-card">
-        <div class="card-header-custom">
-          <h5><i class="bi bi-grid"></i> Quick Navigation</h5>
-        </div>
-        <div class="card-body p-0">
-          <a href="/teacher/profile" class="nav-link-custom">
-            <i class="bi bi-person"></i> My Profile
-          </a>
-          <a href="#" class="nav-link-custom">
-            <i class="bi bi-calendar3"></i> Class Schedule
-          </a>
-          <a href="#" class="nav-link-custom">
-            <i class="bi bi-journal-richtext"></i> Teaching Materials
-          </a>
-          <a href="#" class="nav-link-custom">
-            <i class="bi bi-people"></i> Students
-          </a>
-          <a href="/logout" class="nav-link-custom">
-            <i class="bi bi-box-arrow-right"></i> Sign Out
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- System Notifications Row -->
-  <div class="row mt-4">
-    <div class="col-md-12">
-      <div class="card dashboard-card">
-        <div class="card-header-custom">
-          <h5><i class="bi bi-bell"></i> System Notifications</h5>
-        </div>
-        <div class="card-body">
-          <div class="alert alert-info mb-0">
-            <i class="bi bi-info-circle me-2"></i>
-            Welcome to the new dashboard! We've updated the interface to provide a better user experience.
-            Explore the new features and let us know if you have any feedback.
-          </div>
-        </div>
+            foreach ($uniqueSubjects as $subject) {
+              echo '<tr>';
+              echo '<td>' . htmlspecialchars($subject['code']) . '</td>';
+              echo '<td>' . htmlspecialchars($subject['name']) . '</td>';
+              echo '<td>' . htmlspecialchars($subject['day_of_week']) . '</td>';
+              echo '<td>' .
+                htmlspecialchars(date('H:i', strtotime($subject['start_time']))) .
+                ' - ' .
+                htmlspecialchars(date('H:i', strtotime($subject['end_time']))) .
+                '</td>';
+              echo '<td>' .
+                (!empty($subject['room']) ? 'Room ' . htmlspecialchars($subject['room']) : '-') .
+                '</td>';
+              echo '</tr>';
+            }
+            ?>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -286,5 +279,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require dirname(__DIR__) . '/layout.php';
+require_once __DIR__ . '/../layout.php';
 ?>

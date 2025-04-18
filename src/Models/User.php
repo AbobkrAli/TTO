@@ -37,7 +37,7 @@ class User
 
     // Check password
     if (password_verify($password, $user['password'])) {
-      $this->log("Password verified for user: {$user['fullname']} (ID: {$user['id']})");
+      $this->log("Password verified for user: {$user['name']} (ID: {$user['id']})");
       return $user;
     } else {
       $this->log("Password verification failed for email: $email");
@@ -58,7 +58,7 @@ class User
       // Create new user
       $this->log("Creating new user with email: $email, name: $fullname, role: $role");
 
-      $sql = "INSERT INTO users (fullname, email, password, role, department) VALUES (?, ?, ?, ?, ?)";
+      $sql = "INSERT INTO users (name, email, password, role, department_id) VALUES (?, ?, ?, ?, ?)";
       $hashed_password = password_hash($password, PASSWORD_DEFAULT);
       $this->db->query($sql, [$fullname, $email, $hashed_password, $role, $department]);
 
@@ -69,7 +69,7 @@ class User
 
       $this->log("Created new user with ID: {$user['id']}");
     } else {
-      $this->log("User already exists with ID: {$user['id']}, name: {$user['fullname']}");
+      $this->log("User already exists with ID: {$user['id']}, name: {$user['name']}");
     }
 
     return $user;
@@ -90,13 +90,13 @@ class User
     $sql = "SELECT u.*, d.name as department_name 
             FROM users u
             LEFT JOIN departments d ON u.department_id = d.id
-            ORDER BY u.fullname";
+            ORDER BY u.name";
     $stmt = $this->db->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 
   /**
-   * Get users by department ID and role
+   * Get users by department and role
    * 
    * @param int $departmentId Department ID
    * @param string $role User role (teacher, supervisor, admin)
@@ -104,7 +104,7 @@ class User
    */
   public function getByDepartmentAndRole($departmentId, $role)
   {
-    $query = "SELECT * FROM users WHERE department_id = :department_id AND role = :role ORDER BY fullname";
+    $query = "SELECT * FROM users WHERE department_id = :department_id AND role = :role ORDER BY name";
     $stmt = $this->db->getConnection()->prepare($query);
     $stmt->bindParam(':department_id', $departmentId);
     $stmt->bindParam(':role', $role);
@@ -122,7 +122,7 @@ class User
 
   public function updateUser($id, $fullname, $email, $role, $department_id = null)
   {
-    $sql = "UPDATE users SET fullname = ?, email = ?, role = ?, department_id = ? WHERE id = ?";
+    $sql = "UPDATE users SET name = ?, email = ?, role = ?, department_id = ? WHERE id = ?";
     $this->db->query($sql, [$fullname, $email, $role, $department_id, $id]);
     return true;
   }
@@ -138,7 +138,7 @@ class User
     $query = "SELECT * FROM users 
               WHERE role = 'teacher' 
               AND (department_id IS NULL OR department_id != :department_id)
-              ORDER BY fullname";
+              ORDER BY name";
     $stmt = $this->db->getConnection()->prepare($query);
     $stmt->bindParam(':department_id', $departmentId);
     $stmt->execute();
@@ -184,12 +184,12 @@ class User
    */
   public function createUser($userData)
   {
-    $sql = "INSERT INTO users (fullname, email, password, role, department_id) 
+    $sql = "INSERT INTO users (name, email, password, role, department_id) 
             VALUES (?, ?, ?, ?, ?)";
-    
+
     // Hash the password
     $hashedPassword = password_hash($userData['password'], PASSWORD_DEFAULT);
-    
+
     try {
       $this->db->query($sql, [
         $userData['fullname'],

@@ -130,62 +130,167 @@ ob_start();
     <!-- Subjects Tab -->
     <div class="tab-pane fade show active" id="subjects" role="tabpanel" aria-labelledby="subjects-tab">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4>Subject List</h4>
-        <a href="/supervisor/departments/<?php echo $department['id']; ?>/subjects/add" class="btn btn-primary">
+        <h4>Department Schedule</h4>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
           <i class="bi bi-plus-circle me-1"></i> Add Subject
-        </a>
+        </button>
+      </div>
+
+      <!-- Day Selection -->
+      <div class="mb-4">
+        <div class="btn-group" role="group">
+          <?php
+          $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+          foreach ($days as $day) {
+            $active = ($selectedDay ?? 'Monday') === $day ? 'active' : '';
+            echo '<button type="button" class="btn btn-outline-primary day-btn ' . $active . '" 
+                      data-day="' . $day . '">' . $day . '</button>';
+          }
+          ?>
+        </div>
       </div>
 
       <div class="card department-card">
         <div class="card-body p-0">
           <div class="table-container">
-            <table class="table table-hover mb-0">
+            <table class="table table-bordered mb-0">
               <thead class="table-light">
                 <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Schedule</th>
-                  <th>Actions</th>
+                  <th style="width: 100px;">Time</th>
+                  <th>Subject Details</th>
                 </tr>
               </thead>
               <tbody>
-                <?php if (!empty($subjects)): ?>
-                  <?php foreach ($subjects as $subject): ?>
-                    <tr>
-                      <td>
-                        <span class="subject-code"><?php echo htmlspecialchars($subject['code']); ?></span>
-                      </td>
-                      <td><?php echo htmlspecialchars($subject['name']); ?></td>
-                      <td>
-                        <span class="subject-day"><?php echo htmlspecialchars($subject['day_of_week']); ?></span>
-                        <span class="subject-time">
-                          <?php echo \App\Models\Subject::formatTime($subject['start_time']); ?> -
-                          <?php echo \App\Models\Subject::formatTime($subject['end_time']); ?>
-                        </span>
-                      </td>
-                      <td>
-                        <a href="/supervisor/subjects/delete/<?php echo $subject['id']; ?>"
-                          class="btn btn-sm btn-delete btn-action">
-                          <i class="bi bi-trash"></i> Delete
-                        </a>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php else: ?>
-                  <tr>
-                    <td colspan="4" class="text-center p-4">
-                      No subjects found for this department.
-                      <a href="/supervisor/departments/<?php echo $department['id']; ?>/subjects/add">Add a new
-                        subject</a>.
-                    </td>
-                  </tr>
-                <?php endif; ?>
+                <?php
+                $timeSlots = [
+                  9 => '9:00 AM',
+                  10 => '10:00 AM',
+                  11 => '11:00 AM',
+                  12 => '12:00 PM',
+                  13 => '1:00 PM',
+                  14 => '2:00 PM',
+                  15 => '3:00 PM',
+                  16 => '4:00 PM',
+                  17 => '5:00 PM'
+                ];
+
+                // Group subjects by day and hour
+                $scheduledSubjects = [];
+                foreach ($subjects as $subject) {
+                  $day = $subject['day'];
+                  $hour = (int) $subject['hour'];
+                  $scheduledSubjects[$day][$hour] = $subject;
+                }
+
+                $currentDay = $selectedDay ?? 'Monday';
+                foreach ($timeSlots as $hour => $displayTime) {
+                  echo '<tr>';
+                  echo '<td class="table-light fw-bold">' . $displayTime . '</td>';
+                  echo '<td style="height: 80px; position: relative;">';
+
+                  if (isset($scheduledSubjects[$currentDay][$hour])) {
+                    $subject = $scheduledSubjects[$currentDay][$hour];
+                    echo '<div class="position-absolute top-0 start-0 end-0 bottom-0 p-2" 
+                               style="background-color: rgba(37, 117, 252, 0.1); border-left: 3px solid #2575fc;">';
+                    echo '<div class="fw-bold">' . htmlspecialchars($subject['subject_name']) . '</div>';
+                    echo '<div class="small text-muted">' . htmlspecialchars($subject['subject_code']) . '</div>';
+                    echo '<div class="position-absolute top-0 end-0 p-1">';
+                    echo '<button class="btn btn-sm btn-link text-danger delete-subject" 
+                                  data-subject-id="' . $subject['id'] . '" 
+                                  title="Delete Subject">';
+                    echo '<i class="bi bi-trash"></i>';
+                    echo '</button>';
+                    echo '</div>';
+                    echo '</div>';
+                  } else {
+                    echo '<button class="btn btn-light btn-sm position-absolute top-50 start-50 translate-middle add-subject-btn" 
+                                  data-bs-toggle="modal" 
+                                  data-bs-target="#addSubjectModal" 
+                                  data-day="' . $currentDay . '" 
+                                  data-hour="' . $hour . '">';
+                    echo '<i class="bi bi-plus"></i> Add Subject';
+                    echo '</button>';
+                  }
+                  echo '</td>';
+                  echo '</tr>';
+                }
+                ?>
               </tbody>
             </table>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Add Subject Modal -->
+    <div class="modal fade" id="addSubjectModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add Subject</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form action="/supervisor/departments/<?= $department['id'] ?>/subjects/add" method="POST">
+              <input type="hidden" name="day" id="addSubjectDay">
+              <input type="hidden" name="hour" id="addSubjectHour">
+              <div class="mb-3">
+                <label for="code" class="form-label">Subject Code</label>
+                <input type="text" class="form-control" id="code" name="code" required>
+              </div>
+              <div class="mb-3">
+                <label for="name" class="form-label">Subject Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Add Subject</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add JavaScript for handling the modal and day selection -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const addSubjectModal = document.getElementById('addSubjectModal');
+        const addSubjectDayInput = document.getElementById('addSubjectDay');
+        const addSubjectHourInput = document.getElementById('addSubjectHour');
+
+        // Handle day selection
+        document.querySelectorAll('.day-btn').forEach(button => {
+          button.addEventListener('click', function () {
+            // Remove active class from all buttons
+            document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            // Update the selected day
+            const day = this.dataset.day;
+            // Reload the page with the selected day
+            window.location.href = window.location.pathname + '?day=' + day;
+          });
+        });
+
+        // Handle add subject button clicks
+        document.querySelectorAll('.add-subject-btn').forEach(button => {
+          button.addEventListener('click', function () {
+            const day = this.dataset.day;
+            const hour = this.dataset.hour;
+            addSubjectDayInput.value = day;
+            addSubjectHourInput.value = hour;
+          });
+        });
+
+        // Handle subject deletion
+        document.querySelectorAll('.delete-subject').forEach(button => {
+          button.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to delete this subject?')) {
+              window.location.href = '/supervisor/subjects/delete/' + this.dataset.subjectId;
+            }
+          });
+        });
+      });
+    </script>
 
     <!-- Teachers Tab -->
     <div class="tab-pane fade" id="teachers" role="tabpanel" aria-labelledby="teachers-tab">
@@ -211,7 +316,7 @@ ob_start();
                 <?php if (!empty($teachers)): ?>
                   <?php foreach ($teachers as $teacher): ?>
                     <tr>
-                      <td><?php echo htmlspecialchars($teacher['fullname']); ?></td>
+                      <td><?php echo htmlspecialchars($teacher['name']); ?></td>
                       <td><?php echo htmlspecialchars($teacher['email']); ?></td>
                       <td>
                         <a href="/supervisor/users/view/<?php echo $teacher['id']; ?>"
