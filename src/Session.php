@@ -46,6 +46,10 @@ class Session
     self::set('user_email', $user['email']);
     self::set('user_fullname', $user['fullname']);
     self::set('user_role', $user['role']);
-    self::set('user_department', $user['department']);
+
+    // Check if department_id exists in the user array before setting it
+    if (isset($user['department_id'])) {
+      self::set('user_department', $user['department_id']);
+    }
   }
 }

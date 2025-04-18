@@ -198,25 +198,8 @@
                 </li>
               <?php elseif (\App\Session::getUserRole() === 'supervisor'): ?>
                 <li class="nav-item">
-                  <a class="nav-link <?php echo $activePage === 'dashboard' ? 'active' : ''; ?>"
-                    href="/supervisor/dashboard">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link <?php echo $activePage === 'users' ? 'active' : ''; ?>" href="/supervisor/users">
-                    <i class="bi bi-people"></i> Manage Users
-                  </a>
-                </li>
-                <li class="nav-item">
                   <a class="nav-link <?php echo $activePage === 'departments' ? 'active' : ''; ?>" href="/supervisor/departments">
                     <i class="bi bi-building"></i> Departments
-                  </a>
-                </li>
-                <div class="sidebar-divider"></div>
-                <li class="nav-item">
-                  <a class="nav-link" href="/supervisor/profile">
-                    <i class="bi bi-person-badge"></i> My Profile
                   </a>
                 </li>
               <?php else: ?>

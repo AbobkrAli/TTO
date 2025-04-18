@@ -25,7 +25,7 @@ if (empty($path) || $path === 'index.php') {
     // Redirect based on role
     $role = \App\Session::getUserRole();
     if ($role === 'supervisor') {
-      redirect('/supervisor/dashboard');
+      redirect('/supervisor/departments');
     } else {
       redirect('/teacher/dashboard');
     }
@@ -62,8 +62,7 @@ try {
 
     // Supervisor routes
     case 'supervisor/dashboard':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->dashboard();
+      redirect('/supervisor/departments');
       break;
 
     // Users management routes
