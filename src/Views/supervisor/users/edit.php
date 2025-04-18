@@ -112,5 +112,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require dirname(dirname(dirname(__DIR__))) . '/layout.php';
+require dirname(dirname(dirname(__DIR__))) . '/Views/layout.php';
 ?>
