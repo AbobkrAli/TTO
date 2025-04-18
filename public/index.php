@@ -128,6 +128,17 @@ try {
       $controller->deleteSubject($matches[1]);
       break;
 
+    // Request routes
+    case (preg_match('/^supervisor\/requests\/approve\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->approveRequest($matches[1]);
+      break;
+
+    case (preg_match('/^supervisor\/requests\/decline\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->declineRequest($matches[1]);
+      break;
+
     // Teacher routes
     case 'teacher/dashboard':
       $controller = new \App\Controllers\TeacherController();
