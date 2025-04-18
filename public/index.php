@@ -5,6 +5,9 @@ define('BASE_PATH', dirname(__DIR__));
 // Autoload classes
 require_once BASE_PATH . '/vendor/autoload.php';
 
+// Load helpers
+require_once BASE_PATH . '/src/helpers.php';
+
 // Start session
 \App\Session::start();
 
@@ -17,17 +20,15 @@ $path = trim($path, '/');
 if (empty($path) || $path === 'index.php') {
   // Redirect to login page if not logged in
   if (!\App\Session::isLoggedIn()) {
-    header('Location: /login');
-    exit;
+    redirect('/login');
   } else {
     // Redirect based on role
     $role = \App\Session::getUserRole();
     if ($role === 'supervisor') {
-      header('Location: /supervisor/dashboard');
+      redirect('/supervisor/dashboard');
     } else {
-      header('Location: /teacher/dashboard');
+      redirect('/teacher/dashboard');
     }
-    exit;
   }
 }
 
@@ -65,6 +66,12 @@ try {
       $controller->dashboard();
       break;
 
+    // Users management routes
+    case 'supervisor/users':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->users();
+      break;
+
     case (preg_match('/^supervisor\/users\/view\/(\d+)$/', $path, $matches) ? true : false):
       $controller = new \App\Controllers\SupervisorController();
       $controller->viewUser($matches[1]);
@@ -73,6 +80,48 @@ try {
     case (preg_match('/^supervisor\/users\/edit\/(\d+)$/', $path, $matches) ? true : false):
       $controller = new \App\Controllers\SupervisorController();
       $controller->editUser($matches[1]);
+      break;
+
+    // Department routes
+    case 'supervisor/departments':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->departments();
+      break;
+
+    case 'supervisor/departments/add':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->addDepartment();
+      break;
+
+    case (preg_match('/^supervisor\/departments\/view\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->viewDepartment($matches[1]);
+      break;
+
+    case (preg_match('/^supervisor\/departments\/edit\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->editDepartment($matches[1]);
+      break;
+
+    case (preg_match('/^supervisor\/departments\/delete\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->deleteDepartment($matches[1]);
+      break;
+
+    // Subject routes
+    case (preg_match('/^supervisor\/departments\/(\d+)\/subjects\/add$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->addSubject($matches[1]);
+      break;
+
+    case (preg_match('/^supervisor\/subjects\/edit\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->editSubject($matches[1]);
+      break;
+
+    case (preg_match('/^supervisor\/subjects\/delete\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->deleteSubject($matches[1]);
       break;
 
     // Teacher routes

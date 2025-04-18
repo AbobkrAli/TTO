@@ -82,6 +82,37 @@ class User
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 
+  /**
+   * Get all users with their department information
+   */
+  public function getAllWithDepartments()
+  {
+    $sql = "SELECT u.*, d.name as department_name 
+            FROM users u
+            LEFT JOIN departments d ON u.department_id = d.id
+            ORDER BY u.fullname";
+    $stmt = $this->db->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * Get users by department ID and role
+   * 
+   * @param int $departmentId Department ID
+   * @param string $role User role (teacher, supervisor, admin)
+   * @return array Array of users
+   */
+  public function getByDepartmentAndRole($departmentId, $role)
+  {
+    $query = "SELECT * FROM users WHERE department_id = :department_id AND role = :role ORDER BY fullname";
+    $stmt = $this->db->getConnection()->prepare($query);
+    $stmt->bindParam(':department_id', $departmentId);
+    $stmt->bindParam(':role', $role);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
   public function getById($id)
   {
     $sql = "SELECT * FROM users WHERE id = ?";
@@ -89,10 +120,10 @@ class User
     return $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
-  public function updateUser($id, $fullname, $email, $role, $department = null)
+  public function updateUser($id, $fullname, $email, $role, $department_id = null)
   {
-    $sql = "UPDATE users SET fullname = ?, email = ?, role = ?, department = ? WHERE id = ?";
-    $this->db->query($sql, [$fullname, $email, $role, $department, $id]);
+    $sql = "UPDATE users SET fullname = ?, email = ?, role = ?, department_id = ? WHERE id = ?";
+    $this->db->query($sql, [$fullname, $email, $role, $department_id, $id]);
     return true;
   }
 }

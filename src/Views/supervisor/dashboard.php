@@ -176,6 +176,35 @@ ob_start();
     padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
   }
+
+  .department-card {
+    height: 100%;
+  }
+
+  .department-card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .department-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .department-stats {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+
+  .departments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
 </style>
 
 <div class="container-fluid">
@@ -213,37 +242,68 @@ ob_start();
     <div class="col-md-4">
       <div class="card dashboard-card bg-white">
         <div class="stats-card">
-          <i class="bi bi-grid-3x3-gap text-info"></i>
-          <div class="stats-number"><?php echo count($departmentCounts); ?></div>
-          <div class="stats-label">Departments</div>
+          <a href="/supervisor/departments" class="text-decoration-none">
+            <i class="bi bi-building text-info"></i>
+            <div class="stats-number"><?php echo count($departments); ?></div>
+            <div class="stats-label">Departments</div>
+          </a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Department Distribution -->
-  <?php if (!empty($departmentCounts)): ?>
-    <div class="row mb-4">
-      <div class="col-md-12">
-        <div class="card dashboard-card">
-          <div class="card-header bg-white">
-            <h5><i class="bi bi-bar-chart-fill"></i> Department Distribution</h5>
-          </div>
-          <div class="card-body">
-            <div class="d-flex flex-wrap">
-              <?php foreach ($departmentCounts as $dept => $count): ?>
-                <div class="me-3 mb-3">
-                  <div class="department-pill">
-                    <?php echo htmlspecialchars($dept); ?>: <?php echo $count; ?> user<?php echo $count > 1 ? 's' : ''; ?>
-                  </div>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          </div>
-        </div>
+  <!-- Departments Row -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="departments-header">
+        <h4><i class="bi bi-building me-2"></i>Departments</h4>
+        <a href="/supervisor/departments" class="btn btn-primary">
+          <i class="bi bi-grid-3x3-gap me-1"></i> Manage Departments
+        </a>
       </div>
     </div>
-  <?php endif; ?>
+    
+    <?php if (!empty($departments)): ?>
+      <?php $counter = 0; ?>
+      <?php foreach ($departments as $dept): ?>
+        <?php if ($counter < 3): ?>
+          <div class="col-md-4">
+            <div class="card dashboard-card">
+              <div class="card-body department-card-body">
+                <h5 class="department-title">
+                  <i class="bi bi-folder me-2 text-primary"></i>
+                  <?php echo htmlspecialchars($dept['name']); ?>
+                </h5>
+                <div class="department-stats">
+                  <div><i class="bi bi-person me-1"></i> <?php echo $dept['teacher_count']; ?> Teachers</div>
+                </div>
+                <div class="mt-auto">
+                  <a href="/supervisor/departments/view/<?php echo $dept['id']; ?>" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye me-1"></i> View Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <?php $counter++; ?>
+        <?php endif; ?>
+      <?php endforeach; ?>
+    <?php else: ?>
+      <div class="col-12">
+        <div class="alert alert-info">
+          No departments found. <a href="/supervisor/departments/add" class="alert-link">Add your first department</a>.
+        </div>
+      </div>
+    <?php endif; ?>
+
+    <?php if (count($departments) > 3): ?>
+      <div class="col-12 text-center mt-3">
+        <a href="/supervisor/departments" class="btn btn-outline-secondary">
+          View All <?php echo count($departments); ?> Departments
+        </a>
+      </div>
+    <?php endif; ?>
+  </div>
 
   <!-- User Management Table -->
   <div class="row">

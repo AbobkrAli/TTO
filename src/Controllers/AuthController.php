@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Models\User;
 use App\Session;
 
-class AuthController
+class AuthController extends Controller
 {
   private $userModel;
 
@@ -21,11 +21,10 @@ class AuthController
       // Already logged in, redirect to appropriate dashboard
       $role = Session::getUserRole();
       if ($role === 'supervisor') {
-        header('Location: /supervisor/dashboard');
+        redirect('/supervisor/dashboard');
       } else {
-        header('Location: /teacher/dashboard');
+        redirect('/teacher/dashboard');
       }
-      exit;
     }
 
     // Not logged in, show login form
@@ -98,11 +97,10 @@ class AuthController
         } else {
           // Only redirect if we're not in debug mode
           if ($user['role'] === 'supervisor') {
-            header('Location: /supervisor/dashboard');
+            redirect('/supervisor/dashboard');
           } else {
-            header('Location: /teacher/dashboard');
+            redirect('/teacher/dashboard');
           }
-          exit;
         }
       } else {
         // Login failed
@@ -122,7 +120,6 @@ class AuthController
   public function logout()
   {
     Session::destroy();
-    header('Location: /login');
-    exit;
+    redirect('/login');
   }
 }

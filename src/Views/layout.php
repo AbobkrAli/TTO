@@ -168,7 +168,35 @@
         <div class="position-sticky pt-3 sidebar-sticky">
           <div class="nav-flex-wrapper">
             <ul class="nav flex-column">
-              <?php if (\App\Session::getUserRole() === 'supervisor'): ?>
+              <?php if (\App\Session::getUserRole() === 'admin'): ?>
+                <li class="nav-item">
+                  <a class="nav-link <?php echo $activePage === 'dashboard' ? 'active' : ''; ?>"
+                    href="/admin/dashboard">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link <?php echo $activePage === 'users' ? 'active' : ''; ?>" href="/admin/users">
+                    <i class="bi bi-people"></i> Users
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link <?php echo $activePage === 'departments' ? 'active' : ''; ?>" href="/admin/departments">
+                    <i class="bi bi-building"></i> Departments
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link <?php echo $activePage === 'settings' ? 'active' : ''; ?>" href="/admin/settings">
+                    <i class="bi bi-gear"></i> Settings
+                  </a>
+                </li>
+                <div class="sidebar-divider"></div>
+                <li class="nav-item">
+                  <a class="nav-link" href="/admin/profile">
+                    <i class="bi bi-person-badge"></i> My Profile
+                  </a>
+                </li>
+              <?php elseif (\App\Session::getUserRole() === 'supervisor'): ?>
                 <li class="nav-item">
                   <a class="nav-link <?php echo $activePage === 'dashboard' ? 'active' : ''; ?>"
                     href="/supervisor/dashboard">
@@ -178,6 +206,11 @@
                 <li class="nav-item">
                   <a class="nav-link <?php echo $activePage === 'users' ? 'active' : ''; ?>" href="/supervisor/users">
                     <i class="bi bi-people"></i> Manage Users
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link <?php echo $activePage === 'departments' ? 'active' : ''; ?>" href="/supervisor/departments">
+                    <i class="bi bi-building"></i> Departments
                   </a>
                 </li>
                 <div class="sidebar-divider"></div>

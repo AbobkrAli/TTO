@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Models\User;
 use App\Session;
 
-class TeacherController
+class TeacherController extends Controller
 {
   private $userModel;
 
@@ -15,8 +15,7 @@ class TeacherController
 
     // Check if user is logged in and is a teacher
     if (!Session::isLoggedIn()) {
-      header('Location: /login');
-      exit;
+      redirect('/login');
     }
   }
 
@@ -58,8 +57,7 @@ class TeacherController
       $updatedUser = $this->userModel->getById($userId);
       Session::setUserData($updatedUser);
 
-      header('Location: /teacher/profile');
-      exit;
+      redirect('/teacher/profile');
     }
 
     require_once dirname(__DIR__) . '/Views/teacher/edit_profile.php';
