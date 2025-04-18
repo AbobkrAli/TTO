@@ -264,14 +264,15 @@ class SupervisorController extends Controller
       $subjectName = $_POST['subject_name'] ?? '';
       $day = $_POST['day'] ?? '';
       $hour = $_POST['hour'] ?? '';
+      $endTime = $_POST['end_time'] ?? '';
 
-      if (empty($subjectCode) || empty($subjectName) || empty($day) || empty($hour)) {
+      if (empty($subjectCode) || empty($subjectName) || empty($day) || empty($hour) || empty($endTime)) {
         $error = "All fields are required";
         require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/add.php';
         return;
       }
 
-      $this->subjectModel->create($subjectCode, $subjectName, $departmentId, $day, $hour);
+      $this->subjectModel->create($subjectCode, $subjectName, $departmentId, $day, $hour, $endTime);
       redirect('/supervisor/departments/view/' . $departmentId);
     }
 
@@ -294,14 +295,15 @@ class SupervisorController extends Controller
       $departmentId = $_POST['department_id'] ?? '';
       $day = $_POST['day'] ?? '';
       $hour = $_POST['hour'] ?? '';
+      $endTime = $_POST['end_time'] ?? '';
 
-      if (empty($subjectCode) || empty($subjectName) || empty($departmentId) || empty($day) || empty($hour)) {
+      if (empty($subjectCode) || empty($subjectName) || empty($departmentId) || empty($day) || empty($hour) || empty($endTime)) {
         $error = "All fields are required";
         require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/edit.php';
         return;
       }
 
-      $this->subjectModel->update($id, $subjectCode, $subjectName, $departmentId, $day, $hour);
+      $this->subjectModel->update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $endTime);
       redirect('/supervisor/departments/view/' . $departmentId);
     }
 
@@ -363,6 +365,99 @@ class SupervisorController extends Controller
     } else {
       // Show add form
       require_once dirname(__DIR__) . '/Views/supervisor/departments/add.php';
+    }
+  }
+
+  /**
+   * Add teachers to a department
+   * 
+   * @param int $departmentId Department ID
+   */
+  public function addDepartmentTeachers($departmentId)
+  {
+    // Check if department exists
+    $department = $this->departmentModel->getById($departmentId);
+    if (!$department) {
+      $_SESSION['error'] = 'Department not found';
+      redirect('/supervisor/departments');
+    }
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $action = $_POST['action'] ?? 'assign';
+      
+      if ($action === 'assign') {
+        // Handle assigning existing teachers
+        $teacherIds = $_POST['teacher_ids'] ?? [];
+        
+        if (empty($teacherIds)) {
+          $error = 'Please select at least one teacher';
+          $availableTeachers = $this->userModel->getTeachersNotInDepartment($departmentId);
+          require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
+          return;
+        }
+        
+        // Update each teacher's department
+        $success = true;
+        foreach ($teacherIds as $teacherId) {
+          if (!$this->userModel->updateDepartment($teacherId, $departmentId)) {
+            $success = false;
+            break;
+          }
+        }
+        
+        if ($success) {
+          $_SESSION['success'] = count($teacherIds) . ' teacher(s) successfully assigned to department';
+          redirect('/supervisor/departments/view/' . $departmentId);
+        } else {
+          $error = 'Failed to assign teachers to department';
+          $availableTeachers = $this->userModel->getTeachersNotInDepartment($departmentId);
+          require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
+        }
+      } else if ($action === 'create') {
+        // Handle creating a new teacher
+        $fullname = $_POST['fullname'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $role = $_POST['role'] ?? 'teacher';
+        
+        if (empty($fullname) || empty($email) || empty($password)) {
+          $error = 'All fields are required';
+          $availableTeachers = $this->userModel->getTeachersNotInDepartment($departmentId);
+          require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
+          return;
+        }
+        
+        // Check if email already exists
+        $existingUser = $this->userModel->getByEmail($email);
+        if ($existingUser) {
+          $error = 'A user with this email already exists';
+          $availableTeachers = $this->userModel->getTeachersNotInDepartment($departmentId);
+          require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
+          return;
+        }
+        
+        // Create the new user
+        $userData = [
+          'fullname' => $fullname,
+          'email' => $email,
+          'password' => $password,
+          'role' => $role,
+          'department_id' => $departmentId
+        ];
+        
+        if ($this->userModel->createUser($userData)) {
+          $_SESSION['success'] = 'New teacher successfully created and assigned to department';
+          redirect('/supervisor/departments/view/' . $departmentId);
+        } else {
+          $error = 'Failed to create new teacher';
+          $availableTeachers = $this->userModel->getTeachersNotInDepartment($departmentId);
+          require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
+        }
+      }
+    } else {
+      // Get all teachers not in this department
+      $availableTeachers = $this->userModel->getTeachersNotInDepartment($departmentId);
+      require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
     }
   }
 }

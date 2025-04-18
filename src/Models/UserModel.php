@@ -146,4 +146,40 @@ class UserModel
     // Execute
     return $stmt->execute();
   }
+
+  /**
+   * Get teachers not assigned to a specific department
+   * 
+   * @param int $departmentId Department ID
+   * @return array Array of teachers not in the department
+   */
+  public function getTeachersNotInDepartment($departmentId)
+  {
+    $query = "SELECT * FROM users 
+              WHERE role = 'teacher' 
+              AND (department_id IS NULL OR department_id != :department_id)
+              ORDER BY last_name, first_name";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':department_id', $departmentId);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * Update user's department
+   * 
+   * @param int $userId User ID
+   * @param int $departmentId Department ID
+   * @return bool Success or failure
+   */
+  public function updateDepartment($userId, $departmentId)
+  {
+    $query = "UPDATE users SET department_id = :department_id WHERE id = :id";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':department_id', $departmentId);
+    $stmt->bindParam(':id', $userId);
+
+    return $stmt->execute();
+  }
 }

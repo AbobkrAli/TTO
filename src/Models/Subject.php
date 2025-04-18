@@ -22,7 +22,7 @@ class Subject
     $sql = "SELECT s.*, d.name as department_name 
             FROM subjects s
             JOIN departments d ON s.department_id = d.id
-            ORDER BY s.subject_name";
+            ORDER BY s.name";
     $stmt = $this->db->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
@@ -32,7 +32,7 @@ class Subject
    */
   public function getByDepartment($departmentId)
   {
-    $sql = "SELECT * FROM subjects WHERE department_id = ? ORDER BY subject_name";
+    $sql = "SELECT * FROM subjects WHERE department_id = ? ORDER BY name";
     $stmt = $this->db->query($sql, [$departmentId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
@@ -53,23 +53,35 @@ class Subject
   /**
    * Create a new subject
    */
-  public function create($subjectCode, $subjectName, $departmentId, $day, $hour)
+  public function create($subjectCode, $subjectName, $departmentId, $day, $hour, $endTime = null)
   {
-    $sql = "INSERT INTO subjects (subject_code, subject_name, department_id, day, hour) 
-            VALUES (?, ?, ?, ?, ?)";
-    $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour]);
-    return $this->db->lastInsertId();
+    // If end_time is not provided, add 1 hour to the start time
+    if ($endTime === null) {
+      $startTime = strtotime($hour);
+      $endTime = date('H:i:s', strtotime('+1 hour', $startTime));
+    }
+
+    $sql = "INSERT INTO subjects (code, name, department_id, day_of_week, start_time, end_time) 
+            VALUES (?, ?, ?, ?, ?, ?)";
+    $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour, $endTime]);
+    return $this->db->getConnection()->lastInsertId();
   }
 
   /**
    * Update an existing subject
    */
-  public function update($id, $subjectCode, $subjectName, $departmentId, $day, $hour)
+  public function update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $endTime = null)
   {
+    // If end_time is not provided, add 1 hour to the start time
+    if ($endTime === null) {
+      $startTime = strtotime($hour);
+      $endTime = date('H:i:s', strtotime('+1 hour', $startTime));
+    }
+
     $sql = "UPDATE subjects 
-            SET subject_code = ?, subject_name = ?, department_id = ?, day = ?, hour = ? 
+            SET code = ?, name = ?, department_id = ?, day_of_week = ?, start_time = ?, end_time = ? 
             WHERE id = ?";
-    return $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour, $id]);
+    return $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour, $endTime, $id]);
   }
 
   /**

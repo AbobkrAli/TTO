@@ -24,7 +24,8 @@ ob_start();
       <div class="card form-card">
         <div class="card-header bg-white py-3">
           <h5 class="mb-0"><i class="bi bi-book me-2"></i>Add New Subject to
-            <?php echo htmlspecialchars($department['name']); ?></h5>
+            <?php echo htmlspecialchars($department['name']); ?>
+          </h5>
         </div>
         <div class="card-body">
           <?php if (isset($error)): ?>
@@ -50,7 +51,7 @@ ob_start();
             </div>
 
             <div class="row mb-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label for="day" class="form-label">Day</label>
                 <select class="form-select" id="day" name="day" required>
                   <option value="" disabled <?php echo !isset($_POST['day']) ? 'selected' : ''; ?>>Select a day</option>
@@ -63,10 +64,15 @@ ob_start();
                   <option value="Sunday" <?php echo (isset($_POST['day']) && $_POST['day'] === 'Sunday') ? 'selected' : ''; ?>>Sunday</option>
                 </select>
               </div>
-              <div class="col-md-6">
-                <label for="hour" class="form-label">Time</label>
+              <div class="col-md-4">
+                <label for="hour" class="form-label">Start Time</label>
                 <input type="time" class="form-control" id="hour" name="hour" required
                   value="<?php echo isset($_POST['hour']) ? htmlspecialchars($_POST['hour']) : ''; ?>">
+              </div>
+              <div class="col-md-4">
+                <label for="end_time" class="form-label">End Time</label>
+                <input type="time" class="form-control" id="end_time" name="end_time" required
+                  value="<?php echo isset($_POST['end_time']) ? htmlspecialchars($_POST['end_time']) : ''; ?>">
               </div>
             </div>
 
@@ -87,5 +93,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require dirname(dirname(dirname(dirname(__DIR__)))) . '/layout.php';
+require dirname(dirname(dirname(dirname(__DIR__)))) . '/Views/layout.php';
 ?>

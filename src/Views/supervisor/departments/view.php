@@ -153,18 +153,17 @@ ob_start();
                   <?php foreach ($subjects as $subject): ?>
                     <tr>
                       <td>
-                        <span class="subject-code"><?php echo htmlspecialchars($subject['subject_code']); ?></span>
+                        <span class="subject-code"><?php echo htmlspecialchars($subject['code']); ?></span>
                       </td>
-                      <td><?php echo htmlspecialchars($subject['subject_name']); ?></td>
+                      <td><?php echo htmlspecialchars($subject['name']); ?></td>
                       <td>
-                        <span class="subject-day"><?php echo htmlspecialchars($subject['day']); ?></span>
-                        <span class="subject-time"><?php echo \App\Models\Subject::formatTime($subject['hour']); ?></span>
+                        <span class="subject-day"><?php echo htmlspecialchars($subject['day_of_week']); ?></span>
+                        <span class="subject-time">
+                          <?php echo \App\Models\Subject::formatTime($subject['start_time']); ?> -
+                          <?php echo \App\Models\Subject::formatTime($subject['end_time']); ?>
+                        </span>
                       </td>
                       <td>
-                        <a href="/supervisor/subjects/edit/<?php echo $subject['id']; ?>"
-                          class="btn btn-sm btn-edit btn-action">
-                          <i class="bi bi-pencil"></i> Edit
-                        </a>
                         <a href="/supervisor/subjects/delete/<?php echo $subject['id']; ?>"
                           class="btn btn-sm btn-delete btn-action">
                           <i class="bi bi-trash"></i> Delete
@@ -192,9 +191,9 @@ ob_start();
     <div class="tab-pane fade" id="teachers" role="tabpanel" aria-labelledby="teachers-tab">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4>Teacher List</h4>
-        <div>
-          <span class="text-muted">To assign teachers to this department, edit the teacher's profile.</span>
-        </div>
+        <a href="/supervisor/departments/<?php echo $department['id']; ?>/teachers/add" class="btn btn-primary">
+          <i class="bi bi-person-plus me-1"></i> Add Teacher
+        </a>
       </div>
 
       <div class="card department-card">

@@ -126,4 +126,82 @@ class User
     $this->db->query($sql, [$fullname, $email, $role, $department_id, $id]);
     return true;
   }
+
+  /**
+   * Get teachers not assigned to a specific department
+   * 
+   * @param int $departmentId Department ID
+   * @return array Array of teachers not in the department
+   */
+  public function getTeachersNotInDepartment($departmentId)
+  {
+    $query = "SELECT * FROM users 
+              WHERE role = 'teacher' 
+              AND (department_id IS NULL OR department_id != :department_id)
+              ORDER BY fullname";
+    $stmt = $this->db->getConnection()->prepare($query);
+    $stmt->bindParam(':department_id', $departmentId);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * Update user's department
+   * 
+   * @param int $userId User ID
+   * @param int $departmentId Department ID
+   * @return bool Success or failure
+   */
+  public function updateDepartment($userId, $departmentId)
+  {
+    $query = "UPDATE users SET department_id = :department_id WHERE id = :id";
+    $stmt = $this->db->getConnection()->prepare($query);
+    $stmt->bindParam(':department_id', $departmentId);
+    $stmt->bindParam(':id', $userId);
+
+    return $stmt->execute();
+  }
+
+  /**
+   * Get user by email
+   *
+   * @param string $email User email
+   * @return array|bool User data or false if not found
+   */
+  public function getByEmail($email)
+  {
+    $sql = "SELECT * FROM users WHERE email = ?";
+    $stmt = $this->db->query($sql, [$email]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * Create a new user with provided data
+   *
+   * @param array $userData User data
+   * @return bool Success or failure
+   */
+  public function createUser($userData)
+  {
+    $sql = "INSERT INTO users (fullname, email, password, role, department_id) 
+            VALUES (?, ?, ?, ?, ?)";
+    
+    // Hash the password
+    $hashedPassword = password_hash($userData['password'], PASSWORD_DEFAULT);
+    
+    try {
+      $this->db->query($sql, [
+        $userData['fullname'],
+        $userData['email'],
+        $hashedPassword,
+        $userData['role'],
+        $userData['department_id']
+      ]);
+      return true;
+    } catch (\Exception $e) {
+      $this->log("Error creating user: " . $e->getMessage());
+      return false;
+    }
+  }
 }

@@ -32,8 +32,8 @@ ob_start();
           <h4>Are you sure you want to delete this subject?</h4>
           <p class="text-muted mb-2">You are about to delete the following subject:</p>
           <div class="mb-4">
-            <strong class="d-block mb-1"><?php echo htmlspecialchars($subject['subject_code']); ?> -
-              <?php echo htmlspecialchars($subject['subject_name']); ?></strong>
+            <strong class="d-block mb-1"><?php echo htmlspecialchars($subject['code']); ?> -
+              <?php echo htmlspecialchars($subject['name']); ?></strong>
             <span class="text-muted">Department: <?php echo htmlspecialchars($subject['department_name']); ?></span>
           </div>
           <p class="text-danger mb-4">This action cannot be undone.</p>
@@ -56,5 +56,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require dirname(dirname(dirname(dirname(__DIR__)))) . '/layout.php';
+require dirname(dirname(dirname(dirname(__DIR__)))) . '/Views/layout.php';
 ?>

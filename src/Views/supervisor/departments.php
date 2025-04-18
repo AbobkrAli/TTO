@@ -134,10 +134,6 @@ ob_start();
                       class="btn btn-sm btn-view btn-action">
                       <i class="bi bi-eye"></i> View
                     </a>
-                    <a href="/supervisor/departments/edit/<?php echo $department['id']; ?>"
-                      class="btn btn-sm btn-edit btn-action">
-                      <i class="bi bi-pencil"></i> Edit
-                    </a>
                     <a href="/supervisor/departments/delete/<?php echo $department['id']; ?>"
                       class="btn btn-sm btn-delete btn-action">
                       <i class="bi bi-trash"></i> Delete
@@ -166,11 +162,10 @@ ob_start();
           <p class="card-text">
             Departments allow you to organize teachers and subjects. Each department can have multiple teachers and
             subjects assigned to it.
-            Use the actions above to view, edit, or delete departments.
+            Use the actions above to view or delete departments.
           </p>
           <ul>
             <li><strong>View:</strong> See teachers and subjects associated with a department</li>
-            <li><strong>Edit:</strong> Change the department name</li>
             <li><strong>Delete:</strong> Remove a department and all its subjects</li>
           </ul>
         </div>

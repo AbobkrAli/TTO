@@ -108,6 +108,11 @@ try {
       $controller->deleteDepartment($matches[1]);
       break;
 
+    case (preg_match('/^supervisor\/departments\/(\d+)\/teachers\/add$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->addDepartmentTeachers($matches[1]);
+      break;
+
     // Subject routes
     case (preg_match('/^supervisor\/departments\/(\d+)\/subjects\/add$/', $path, $matches) ? true : false):
       $controller = new \App\Controllers\SupervisorController();

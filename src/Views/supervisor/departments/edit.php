@@ -1,33 +1,56 @@
-<?php require_once dirname(dirname(dirname(__DIR__))) . '/Views/includes/header.php'; ?>
+<?php
+$pageTitle = 'Edit Department';
+$activePage = 'departments';
 
-<div class="container mt-4">
-  <div class="card shadow-sm">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-      <h4 class="mb-0">Edit Department</h4>
-      <a href="/supervisor/departments" class="btn btn-sm btn-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Departments
-      </a>
-    </div>
-    <div class="card-body">
-      <?php if (isset($error)): ?>
-        <div class="alert alert-danger">
-          <?php echo $error; ?>
-        </div>
-      <?php endif; ?>
+ob_start();
+?>
 
-      <form action="/supervisor/departments/edit/<?php echo $department['id']; ?>" method="POST">
-        <div class="mb-3">
-          <label for="name" class="form-label">Department Name</label>
-          <input type="text" class="form-control" id="name" name="name" value="<?php echo $department['name']; ?>"
-            required>
-        </div>
+<style>
+  .form-card {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
 
-        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save"></i> Update Department
-          </button>
+  .form-card:hover {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+</style>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-8 col-lg-6 mx-auto">
+      <div class="card form-card">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0"><i class="bi bi-building me-2"></i>Edit Department</h5>
         </div>
-      </form>
+        <div class="card-body">
+          <?php if (isset($error)): ?>
+            <div class="alert alert-danger">
+              <?php echo $error; ?>
+            </div>
+          <?php endif; ?>
+
+          <form action="/supervisor/departments/edit/<?php echo $department['id']; ?>" method="post">
+            <div class="mb-3">
+              <label for="name" class="form-label">Department Name</label>
+              <input type="text" class="form-control" id="name" name="name" required placeholder="Enter department name"
+                value="<?php echo isset($department['name']) ? htmlspecialchars($department['name']) : ''; ?>">
+              <div class="form-text">Department name should be unique and descriptive.</div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <a href="/supervisor/departments/view/<?php echo $department['id']; ?>" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Department
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save"></i> Update Department
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </div>

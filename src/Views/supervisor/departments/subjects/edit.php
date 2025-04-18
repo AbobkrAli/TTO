@@ -58,25 +58,37 @@ ob_start();
             </div>
 
             <div class="row mb-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label for="day" class="form-label">Day</label>
                 <select class="form-select" id="day" name="day" required>
-                  <option value="Monday" <?php echo $subject['day'] === 'Monday' ? 'selected' : ''; ?>>Monday</option>
-                  <option value="Tuesday" <?php echo $subject['day'] === 'Tuesday' ? 'selected' : ''; ?>>Tuesday</option>
-                  <option value="Wednesday" <?php echo $subject['day'] === 'Wednesday' ? 'selected' : ''; ?>>Wednesday
+                  <option value="Monday" <?php echo $subject['day_of_week'] === 'Monday' ? 'selected' : ''; ?>>Monday
                   </option>
-                  <option value="Thursday" <?php echo $subject['day'] === 'Thursday' ? 'selected' : ''; ?>>Thursday
+                  <option value="Tuesday" <?php echo $subject['day_of_week'] === 'Tuesday' ? 'selected' : ''; ?>>Tuesday
                   </option>
-                  <option value="Friday" <?php echo $subject['day'] === 'Friday' ? 'selected' : ''; ?>>Friday</option>
-                  <option value="Saturday" <?php echo $subject['day'] === 'Saturday' ? 'selected' : ''; ?>>Saturday
+                  <option value="Wednesday" <?php echo $subject['day_of_week'] === 'Wednesday' ? 'selected' : ''; ?>>
+                    Wednesday
                   </option>
-                  <option value="Sunday" <?php echo $subject['day'] === 'Sunday' ? 'selected' : ''; ?>>Sunday</option>
+                  <option value="Thursday" <?php echo $subject['day_of_week'] === 'Thursday' ? 'selected' : ''; ?>>
+                    Thursday
+                  </option>
+                  <option value="Friday" <?php echo $subject['day_of_week'] === 'Friday' ? 'selected' : ''; ?>>Friday
+                  </option>
+                  <option value="Saturday" <?php echo $subject['day_of_week'] === 'Saturday' ? 'selected' : ''; ?>>
+                    Saturday
+                  </option>
+                  <option value="Sunday" <?php echo $subject['day_of_week'] === 'Sunday' ? 'selected' : ''; ?>>Sunday
+                  </option>
                 </select>
               </div>
-              <div class="col-md-6">
-                <label for="hour" class="form-label">Time</label>
+              <div class="col-md-4">
+                <label for="hour" class="form-label">Start Time</label>
                 <input type="time" class="form-control" id="hour" name="hour" required
-                  value="<?php echo htmlspecialchars($subject['hour']); ?>">
+                  value="<?php echo htmlspecialchars($subject['start_time']); ?>">
+              </div>
+              <div class="col-md-4">
+                <label for="end_time" class="form-label">End Time</label>
+                <input type="time" class="form-control" id="end_time" name="end_time" required
+                  value="<?php echo htmlspecialchars($subject['end_time']); ?>">
               </div>
             </div>
 
@@ -97,5 +109,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require dirname(dirname(dirname(dirname(__DIR__)))) . '/layout.php';
+require dirname(dirname(dirname(dirname(__DIR__)))) . '/Views/layout.php';
 ?>
