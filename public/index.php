@@ -134,6 +134,21 @@ try {
       $controller->dashboard();
       break;
 
+    case 'teacher/schedule':
+      $controller = new \App\Controllers\TeacherController();
+      $controller->departmentSchedule();
+      break;
+
+    case 'teacher/requests/create':
+      $controller = new \App\Controllers\TeacherController();
+      $controller->createRequest();
+      break;
+
+    case (preg_match('/^teacher\/requests\/cancel\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\TeacherController();
+      $controller->cancelRequest($matches[1]);
+      break;
+
     case 'teacher/profile':
       $controller = new \App\Controllers\TeacherController();
       $controller->profile();
