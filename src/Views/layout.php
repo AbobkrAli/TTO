@@ -203,6 +203,11 @@
                     <i class="bi bi-building"></i> Departments
                   </a>
                 </li>
+                <li class="nav-item">
+                  <a class="nav-link <?php echo $activePage === 'classes' ? 'active' : ''; ?>" href="/supervisor/classes">
+                    <i class="bi bi-mortarboard"></i> Classes
+                  </a>
+                </li>
               <?php else: ?>
                 <li class="nav-item">
                   <a class="nav-link <?php echo $activePage === 'dashboard' ? 'active' : ''; ?>"

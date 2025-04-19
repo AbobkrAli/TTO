@@ -3,12 +3,6 @@ $pageTitle = 'Edit Subject';
 $activePage = 'departments';
 
 ob_start();
-
-// Add this after fetching the subject
-$teacherQuery = "SELECT id, name FROM users WHERE department_id = ? AND role = 'teacher'";
-$stmt = $conn->prepare($teacherQuery);
-$stmt->execute([$subject['department_id']]);
-$teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <style>
@@ -55,41 +49,47 @@ $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="mb-3">
               <label for="department_id" class="form-label">Department</label>
               <select class="form-select" id="department_id" name="department_id" required>
-                <?php foreach ($departments as $department): ?>
-                  <option value="<?php echo $department['id']; ?>" <?php echo $subject['department_id'] == $department['id'] ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars($department['name']); ?>
+                <?php foreach ($departments as $dept): ?>
+                  <option value="<?php echo $dept['id']; ?>" <?php echo ($dept['id'] == $subject['department_id']) ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($dept['name']); ?>
                   </option>
                 <?php endforeach; ?>
               </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="teacher_id" class="form-label">Assign Teacher</label>
+              <select class="form-select" id="teacher_id" name="teacher_id">
+                <option value="">-- Select Teacher (Optional) --</option>
+                <?php foreach ($teachers as $teacher): ?>
+                  <option value="<?php echo $teacher['id']; ?>" <?php echo ($teacher['id'] == ($subject['teacher_id'] ?? null)) ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($teacher['name']); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+              <div class="form-text">Assign a teacher to this subject or leave unassigned</div>
             </div>
 
             <div class="row mb-3">
               <div class="col-md-4">
                 <label for="day" class="form-label">Day</label>
                 <select class="form-select" id="day" name="day" required>
-                  <option value="Monday" <?php echo $subject['day_of_week'] === 'Monday' ? 'selected' : ''; ?>>Monday
-                  </option>
-                  <option value="Tuesday" <?php echo $subject['day_of_week'] === 'Tuesday' ? 'selected' : ''; ?>>Tuesday
-                  </option>
-                  <option value="Wednesday" <?php echo $subject['day_of_week'] === 'Wednesday' ? 'selected' : ''; ?>>
-                    Wednesday
-                  </option>
-                  <option value="Thursday" <?php echo $subject['day_of_week'] === 'Thursday' ? 'selected' : ''; ?>>
-                    Thursday
-                  </option>
-                  <option value="Friday" <?php echo $subject['day_of_week'] === 'Friday' ? 'selected' : ''; ?>>Friday
-                  </option>
-                  <option value="Saturday" <?php echo $subject['day_of_week'] === 'Saturday' ? 'selected' : ''; ?>>
-                    Saturday
-                  </option>
-                  <option value="Sunday" <?php echo $subject['day_of_week'] === 'Sunday' ? 'selected' : ''; ?>>Sunday
-                  </option>
+                  <?php foreach ($days as $dayOption): ?>
+                    <option value="<?php echo $dayOption; ?>" <?php echo ($dayOption == $subject['day']) ? 'selected' : ''; ?>>
+                      <?php echo $dayOption; ?>
+                    </option>
+                  <?php endforeach; ?>
                 </select>
               </div>
               <div class="col-md-4">
-                <label for="hour" class="form-label">Start Time</label>
-                <input type="time" class="form-control" id="hour" name="hour" required
-                  value="<?php echo htmlspecialchars($subject['start_time']); ?>">
+                <label for="hour" class="form-label">Starting Hour</label>
+                <select class="form-select" id="hour" name="hour" required>
+                  <?php foreach ($hours as $hourValue => $hourDisplay): ?>
+                    <option value="<?php echo $hourValue; ?>" <?php echo ($hourValue == $subject['hour']) ? 'selected' : ''; ?>>
+                      <?php echo $hourDisplay; ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
               </div>
               <div class="col-md-4">
                 <label for="end_time" class="form-label">End Time</label>
@@ -98,24 +98,13 @@ $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
               </div>
             </div>
 
-            <div class="form-group">
-              <label>Assign Teacher:</label>
-              <select name="teacher_id" required>
-                <option value="">Select Teacher</option>
-                <?php foreach ($teachers as $teacher): ?>
-                  <option value="<?php echo $teacher['id']; ?>" <?php echo ($teacher['id'] == $subject['teacher_id']) ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars($teacher['name']); ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <div class="d-flex justify-content-between">
-              <a href="/supervisor/departments/view/<?php echo $subject['department_id']; ?>" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+              <a href="/supervisor/departments/view/<?php echo $subject['department_id']; ?>"
+                class="btn btn-outline-secondary me-md-2">
+                <i class="bi bi-x-circle me-1"></i> Cancel
               </a>
               <button type="submit" class="btn btn-primary">
-                <i class="bi bi-save"></i> Update Subject
+                <i class="bi bi-check-circle me-1"></i> Save Changes
               </button>
             </div>
           </form>
@@ -128,9 +117,4 @@ $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php
 $content = ob_get_clean();
 require dirname(dirname(dirname(dirname(__DIR__)))) . '/Views/layout.php';
-
-// Update the SQL query in the POST handler
-$query = "UPDATE subjects SET subject_code = ?, name = ?, day = ?, hour = ?, teacher_id = ? WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->execute([$subject_code, $name, $day, $hour, $teacher_id, $id]);
 ?>

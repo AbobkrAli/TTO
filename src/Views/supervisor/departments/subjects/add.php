@@ -1,42 +1,10 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/src/Database/connection.php';
-
-// Get department ID from the request
-$department_id = $_GET['department_id'] ?? null;
-
-if (!$department_id) {
-  die("Department ID is required");
-}
-
-// Fetch teachers for this department
-$teacherQuery = "SELECT id, name FROM users WHERE department_id = ? AND role = 'teacher'";
-$stmt = $conn->prepare($teacherQuery);
-$stmt->execute([$department_id]);
-$teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $subject_code = $_POST['subject_code'];
-  $name = $_POST['name'];
-  $day = $_POST['day'];
-  $hour = $_POST['hour'];
-  $teacher_id = $_POST['teacher_id'];
-
-  try {
-    $query = "INSERT INTO subjects (subject_code, name, department_id, day, hour, teacher_id) 
-                  VALUES (?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($query);
-    $stmt->execute([$subject_code, $name, $department_id, $day, $hour, $teacher_id]);
-
-    header("Location: /supervisor/departments/view.php?id=" . $department_id);
-    exit;
-  } catch (PDOException $e) {
-    $error = "Error adding subject: " . $e->getMessage();
-  }
-}
-
 $pageTitle = 'Add Subject';
 $activePage = 'departments';
+
+// Get all places
+$placeModel = new \App\Models\Place();
+$places = $placeModel->getAll();
 
 ob_start();
 ?>
@@ -56,10 +24,12 @@ ob_start();
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-md-8 mx-auto">
-      <div class="card form-card mb-4">
+    <div class="col-md-8 col-lg-6 mx-auto">
+      <div class="card form-card">
         <div class="card-header bg-white py-3">
-          <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Add New Subject</h5>
+          <h5 class="mb-0"><i class="bi bi-book me-2"></i>Add New Subject to
+            <?php echo htmlspecialchars($department['name']); ?>
+          </h5>
         </div>
         <div class="card-body">
           <?php if (isset($error)): ?>
@@ -68,52 +38,70 @@ ob_start();
             </div>
           <?php endif; ?>
 
-          <form method="POST">
+          <form action="/supervisor/departments/<?php echo $department['id']; ?>/subjects/add" method="post">
             <div class="mb-3">
               <label for="subject_code" class="form-label">Subject Code</label>
-              <input type="text" class="form-control" id="subject_code" name="subject_code" required>
+              <input type="text" class="form-control" id="subject_code" name="subject_code" required
+                placeholder="e.g., MATH101"
+                value="<?php echo isset($_POST['subject_code']) ? htmlspecialchars($_POST['subject_code']) : ''; ?>">
               <div class="form-text">A unique identifier for the subject.</div>
             </div>
 
             <div class="mb-3">
-              <label for="name" class="form-label">Subject Name</label>
-              <input type="text" class="form-control" id="name" name="name" required>
+              <label for="subject_name" class="form-label">Subject Name</label>
+              <input type="text" class="form-control" id="subject_name" name="subject_name" required
+                placeholder="e.g., Introduction to Mathematics"
+                value="<?php echo isset($_POST['subject_name']) ? htmlspecialchars($_POST['subject_name']) : ''; ?>">
             </div>
 
-            <!-- Add teacher selection dropdown -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="day" class="form-label">Day</label>
+                <select class="form-select" id="day" name="day" required>
+                  <option value="" disabled <?php echo !isset($_POST['day']) ? 'selected' : ''; ?>>Select a day</option>
+                  <option value="Monday" <?php echo (isset($_POST['day']) && $_POST['day'] === 'Monday') ? 'selected' : ''; ?>>Monday</option>
+                  <option value="Tuesday" <?php echo (isset($_POST['day']) && $_POST['day'] === 'Tuesday') ? 'selected' : ''; ?>>Tuesday</option>
+                  <option value="Wednesday" <?php echo (isset($_POST['day']) && $_POST['day'] === 'Wednesday') ? 'selected' : ''; ?>>Wednesday</option>
+                  <option value="Thursday" <?php echo (isset($_POST['day']) && $_POST['day'] === 'Thursday') ? 'selected' : ''; ?>>Thursday</option>
+                  <option value="Friday" <?php echo (isset($_POST['day']) && $_POST['day'] === 'Friday') ? 'selected' : ''; ?>>Friday</option>
+                  <option value="Saturday" <?php echo (isset($_POST['day']) && $_POST['day'] === 'Saturday') ? 'selected' : ''; ?>>Saturday</option>
+                  <option value="Sunday" <?php echo (isset($_POST['day']) && $_POST['day'] === 'Sunday') ? 'selected' : ''; ?>>Sunday</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="hour" class="form-label">Start Time</label>
+                <input type="time" class="form-control" id="hour" name="hour" required
+                  value="<?php echo isset($_POST['hour']) ? htmlspecialchars($_POST['hour']) : ''; ?>">
+              </div>
+              <div class="col-md-4">
+                <label for="end_time" class="form-label">End Time</label>
+                <input type="time" class="form-control" id="end_time" name="end_time" required
+                  value="<?php echo isset($_POST['end_time']) ? htmlspecialchars($_POST['end_time']) : ''; ?>">
+              </div>
+            </div>
+
             <div class="mb-3">
-              <label for="teacher_id" class="form-label">Assign Teacher</label>
-              <select class="form-select" id="teacher_id" name="teacher_id" required>
-                <option value="">Select Teacher</option>
-                <?php foreach ($teachers as $teacher): ?>
-                  <option value="<?php echo $teacher['id']; ?>">
-                    <?php echo htmlspecialchars($teacher['name']); ?>
+              <label for="place" class="form-label">Place/Room</label>
+              <select class="form-select" id="place" name="place" required>
+                <option value="" disabled <?php echo !isset($_POST['place']) ? 'selected' : ''; ?>>Select a place
+                </option>
+                <?php foreach ($places as $place): ?>
+                  <option value="<?php echo htmlspecialchars($place['name']); ?>" <?php echo (isset($_POST['place']) && $_POST['place'] === $place['name']) ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($place['name']); ?>
+                    (<?php echo ucfirst(str_replace('_', ' ', $place['type'])); ?>)
                   </option>
                 <?php endforeach; ?>
               </select>
+              <div class="form-text">Select the location where the subject will be taught.</div>
             </div>
 
-            <div class="mb-3">
-              <label for="day" class="form-label">Day</label>
-              <select class="form-select" id="day" name="day" required>
-                <option value="Sunday">Sunday</option>
-                <option value="Monday">Monday</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Thursday">Thursday</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label for="hour" class="form-label">Hour</label>
-              <input type="number" class="form-control" id="hour" name="hour" min="9" max="17" required>
-              <div class="form-text">Class hour (9-17)</div>
-            </div>
-
-            <div class="text-end">
-              <a href="/supervisor/departments/view.php?id=<?php echo $department_id; ?>"
-                class="btn btn-secondary me-2">Cancel</a>
-              <button type="submit" class="btn btn-primary">Add Subject</button>
+            <div class="d-flex justify-content-between">
+              <a href="/supervisor/departments/view/<?php echo $department['id']; ?>" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Subject
+              </button>
             </div>
           </form>
         </div>

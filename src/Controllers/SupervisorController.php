@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\User;
 use App\Models\Department;
 use App\Models\Subject;
+use App\Models\ClassModel;
 use App\Session;
 use App\Authentication;
 use App\Models\Request;
@@ -15,6 +16,7 @@ class SupervisorController extends Controller
   private $departmentModel;
   private $subjectModel;
   private $requestModel;
+  private $classModel;
 
   public function __construct()
   {
@@ -27,6 +29,7 @@ class SupervisorController extends Controller
     $this->departmentModel = new Department();
     $this->subjectModel = new Subject();
     $this->requestModel = new Request();
+    $this->classModel = new ClassModel();
   }
 
   /**
@@ -256,8 +259,28 @@ class SupervisorController extends Controller
     // Get pending requests for this department
     $requests = $this->requestModel->getByDepartment($id);
 
+    // Get approved requests for this department to get teacher info for office hours
+    $approvedRequests = $this->requestModel->getApprovedByDepartment($id);
+
+    // Create a lookup map for approved requests
+    $requestInfo = [];
+    foreach ($approvedRequests as $req) {
+      $requestInfo[$req['id']] = $req;
+    }
+
+    // Attach teacher info to office hour subjects
+    foreach ($subjects as &$subject) {
+      if (!empty($subject['request_id']) && isset($requestInfo[$subject['request_id']])) {
+        $subject['teacher_name'] = $requestInfo[$subject['request_id']]['teacher_name'];
+        $subject['teacher_id'] = $requestInfo[$subject['request_id']]['teacher_id'];
+      }
+    }
+
     // Get selected day from query parameter
     $selectedDay = $_GET['day'] ?? 'Monday';
+
+    // Get all classes
+    $classes = $this->classModel->getAll();
 
     // Load view with selected day
     require_once dirname(__DIR__) . '/Views/supervisor/departments/view.php';
@@ -283,8 +306,10 @@ class SupervisorController extends Controller
     $name = trim($_POST['name'] ?? '');
     $day = trim($_POST['day'] ?? '');
     $hour = trim($_POST['hour'] ?? '');
+    $classId = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
+    $teacherId = !empty($_POST['teacher_id']) ? (int) $_POST['teacher_id'] : null;
 
-    if (empty($code) || empty($name) || empty($day) || empty($hour)) {
+    if (empty($code) || empty($name) || empty($day) || empty($hour) || empty($classId)) {
       $missing = [];
       if (empty($code))
         $missing[] = 'code';
@@ -294,6 +319,8 @@ class SupervisorController extends Controller
         $missing[] = 'day';
       if (empty($hour))
         $missing[] = 'hour';
+      if (empty($classId))
+        $missing[] = 'class';
 
       $_SESSION['error'] = 'Missing required fields: ' . implode(', ', $missing);
       error_log("Missing fields: " . implode(', ', $missing));
@@ -308,11 +335,31 @@ class SupervisorController extends Controller
       redirect('/supervisor/departments/view/' . $departmentId . '?day=' . urlencode($day));
     }
 
+    // Validate teacher belongs to this department if specified
+    if ($teacherId) {
+      $teacher = $this->userModel->getById($teacherId);
+      if (!$teacher || $teacher['department_id'] != $departmentId || $teacher['role'] !== 'teacher') {
+        $_SESSION['error'] = 'The selected teacher is not valid for this department';
+        redirect('/supervisor/departments/view/' . $departmentId . '?day=' . urlencode($day));
+      }
+    }
+
     try {
-      // Create subject - pass parameters in correct order: code, name, departmentId, day, hour
-      $result = $this->subjectModel->create($code, $name, $departmentId, $day, $hour);
+      // Create subject with teacher assignment
+      $result = $this->subjectModel->create(
+        $code,
+        $name,
+        $departmentId,
+        $day,
+        $hour,
+        $classId,
+        false,  // isOfficeHour 
+        null,   // requestId
+        $teacherId
+      );
+
       if ($result) {
-        $_SESSION['success'] = "Subject '{$name}' added successfully";
+        $_SESSION['success'] = "Subject '{$name}' added successfully" . ($teacherId ? " and assigned to a teacher" : "");
         error_log("Subject created successfully. ID: " . $result);
       } else {
         $_SESSION['error'] = 'Failed to add subject. Please check the logs for details.';
@@ -335,47 +382,85 @@ class SupervisorController extends Controller
   {
     $subject = $this->subjectModel->getById($id);
     if (!$subject) {
+      $_SESSION['error'] = 'Subject not found';
       redirect('/supervisor/departments');
     }
 
     $departments = $this->departmentModel->getAll();
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $subjectCode = $_POST['subject_code'] ?? '';
-      $subjectName = $_POST['subject_name'] ?? '';
-      $departmentId = $_POST['department_id'] ?? '';
-      $day = $_POST['day'] ?? '';
-      $hour = $_POST['hour'] ?? '';
-      $endTime = $_POST['end_time'] ?? '';
+    // Get teachers for the current department
+    $teachers = $this->userModel->getByDepartmentAndRole($subject['department_id'], 'teacher');
 
-      if (empty($subjectCode) || empty($subjectName) || empty($departmentId) || empty($day) || empty($hour) || empty($endTime)) {
-        $error = "All fields are required";
-        require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/edit.php';
-        return;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $subjectCode = trim($_POST['subject_code'] ?? '');
+      $subjectName = trim($_POST['subject_name'] ?? '');
+      $departmentId = (int) ($_POST['department_id'] ?? $subject['department_id']);
+      $day = trim($_POST['day'] ?? '');
+      $hour = (int) ($_POST['hour'] ?? 0);
+      $teacherId = !empty($_POST['teacher_id']) ? (int) $_POST['teacher_id'] : null;
+
+      if (empty($subjectCode) || empty($subjectName) || empty($departmentId) || empty($day) || $hour < 9 || $hour > 17) {
+        $_SESSION['error'] = "All fields are required and hour must be between 9 and 17";
+        redirect('/supervisor/subjects/edit/' . $id);
       }
 
-      $this->subjectModel->update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $endTime);
-      redirect('/supervisor/departments/view/' . $departmentId);
+      // Validate teacher belongs to this department if specified
+      if ($teacherId) {
+        $teacher = $this->userModel->getById($teacherId);
+        if (!$teacher || $teacher['department_id'] != $departmentId || $teacher['role'] !== 'teacher') {
+          $_SESSION['error'] = 'The selected teacher is not valid for this department';
+          redirect('/supervisor/subjects/edit/' . $id);
+        }
+      }
+
+      if ($this->subjectModel->update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId)) {
+        $_SESSION['success'] = 'Subject updated successfully';
+        redirect('/supervisor/departments/view/' . $departmentId . '?day=' . $day);
+      } else {
+        $_SESSION['error'] = 'Failed to update subject';
+        redirect('/supervisor/subjects/edit/' . $id);
+      }
+    }
+
+    // Get the day options
+    $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+
+    // Get the hour options
+    $hours = [];
+    for ($i = 9; $i <= 17; $i++) {
+      $hours[$i] = sprintf('%02d:00', $i);
     }
 
     require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/edit.php';
   }
 
-  // Delete a subject
+  /**
+   * Delete a subject
+   * 
+   * @param int $id Subject ID 
+   */
   public function deleteSubject($id)
   {
     $subject = $this->subjectModel->getById($id);
     if (!$subject) {
+      $_SESSION['error'] = 'Subject not found';
       redirect('/supervisor/departments');
     }
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $departmentId = $subject['department_id'];
-      $this->subjectModel->delete($id);
-      redirect('/supervisor/departments/view/' . $departmentId);
-    }
+    $departmentId = $subject['department_id'];
+    $day = $subject['day'];
 
-    require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/delete.php';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      if ($this->subjectModel->delete($id)) {
+        $_SESSION['success'] = 'Subject deleted successfully';
+      } else {
+        $_SESSION['error'] = 'Failed to delete subject';
+      }
+      redirect('/supervisor/departments/view/' . $departmentId . '?day=' . $day);
+    } else {
+      // Show confirmation page or handle with JavaScript confirm
+      redirect('/supervisor/departments/view/' . $departmentId . '?day=' . $day);
+    }
   }
 
   /**
@@ -505,16 +590,19 @@ class SupervisorController extends Controller
       // Update request status
       $this->requestModel->updateStatus($id, 'approved');
 
-      // Create subject from the request
+      // Create subject from the request - mark as office hour and associate with request and teacher
       $this->subjectModel->create(
-        $request['subject_code'],
-        $request['subject_name'],
+        $request['subject_code'] ?? 'OH-' . date('Ymd') . '-' . $id,
+        $request['subject_name'] ?? 'Office Hours (' . $request['teacher_name'] . ')',
         $request['department_id'],
         $request['day'],
-        $request['hour']
+        $request['hour'],
+        true,  // isOfficeHour flag
+        $id,   // requestId
+        $request['teacher_id'] // teacherId - assign to requesting teacher
       );
 
-      $_SESSION['success'] = 'Request approved and subject created successfully';
+      $_SESSION['success'] = 'Request approved and office hour created successfully';
     } catch (\Exception $e) {
       $_SESSION['error'] = 'Error approving request: ' . $e->getMessage();
     }
@@ -548,5 +636,54 @@ class SupervisorController extends Controller
 
     $_SESSION['success'] = 'Request declined successfully';
     redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
+  }
+
+  /**
+   * Display the classes management page
+   */
+  public function classes()
+  {
+    $classes = $this->classModel->getAll();
+    $this->view('supervisor/classes/index', ['classes' => $classes]);
+  }
+
+  /**
+   * Display the add class form
+   */
+  public function addClass()
+  {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $name = $_POST['name'] ?? '';
+
+      if (empty($name)) {
+        Session::set('error', 'Class name is required');
+        redirect('/supervisor/classes/add');
+      }
+
+      try {
+        $this->classModel->create($name);
+        Session::set('success', 'Class added successfully');
+        redirect('/supervisor/classes');
+      } catch (\Exception $e) {
+        Session::set('error', 'Failed to add class: ' . $e->getMessage());
+        redirect('/supervisor/classes/add');
+      }
+    }
+
+    $this->view('supervisor/classes/add');
+  }
+
+  /**
+   * Delete a class
+   */
+  public function deleteClass($id)
+  {
+    try {
+      $this->classModel->delete($id);
+      Session::set('success', 'Class deleted successfully');
+    } catch (\Exception $e) {
+      Session::set('error', 'Failed to delete class: ' . $e->getMessage());
+    }
+    redirect('/supervisor/classes');
   }
 }

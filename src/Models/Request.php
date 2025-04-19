@@ -127,4 +127,20 @@ class Request
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     return $result['count'];
   }
+
+  /**
+   * Get approved requests by department ID
+   */
+  public function getApprovedByDepartment($departmentId)
+  {
+    $sql = "SELECT r.*, 
+                  u.name as teacher_name,
+                  CONCAT('REQ-', r.id) as request_reference
+            FROM requests r
+            JOIN users u ON r.teacher_id = u.id
+            WHERE r.department_id = ? AND r.status = 'approved'
+            ORDER BY r.day, r.hour";
+    $stmt = $this->db->query($sql, [$departmentId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
 }

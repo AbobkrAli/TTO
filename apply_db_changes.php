@@ -99,6 +99,21 @@ try {
   exit(1);
 }
 
+// Add class_id column to subjects table if it doesn't exist
+try {
+  $sql = "ALTER TABLE subjects 
+            ADD COLUMN IF NOT EXISTS class_id INT NULL AFTER hour,
+            ADD CONSTRAINT fk_subject_class 
+            FOREIGN KEY (class_id) REFERENCES classes(id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE";
+  $db->query($sql);
+  echo "✓ Added class_id column to subjects table\n";
+} catch (Exception $e) {
+  echo "✗ Error adding class_id column: " . $e->getMessage() . "\n";
+  exit(1);
+}
+
 // Add sample data if tables are empty
 if ($db->query("SELECT COUNT(*) FROM departments")->fetchColumn() == 0) {
   echo "Adding sample departments...\n";

@@ -81,6 +81,11 @@ try {
       $controller->editUser($matches[1]);
       break;
 
+    case (preg_match('/^supervisor\/users\/delete\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->deleteUser($matches[1]);
+      break;
+
     // Department routes
     case 'supervisor/departments':
       $controller = new \App\Controllers\SupervisorController();
@@ -168,6 +173,87 @@ try {
     case 'teacher/profile/edit':
       $controller = new \App\Controllers\TeacherController();
       $controller->updateProfile();
+      break;
+
+    // Supervisor routes
+    case 'supervisor/users/add':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->addUser();
+      break;
+
+    case 'supervisor/users/edit/{id}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->editUser($id);
+      break;
+
+    case 'supervisor/users/delete/{id}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->deleteUser($id);
+      break;
+
+    case 'supervisor/departments/add':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->addDepartment();
+      break;
+
+    case 'supervisor/departments/edit/{id}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->editDepartment($id);
+      break;
+
+    case 'supervisor/departments/delete/{id}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->deleteDepartment($id);
+      break;
+
+    case 'supervisor/departments/view/{id}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->viewDepartment($id);
+      break;
+
+    case 'supervisor/departments/{id}/subjects/add':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->addSubject($id);
+      break;
+
+    case 'supervisor/departments/{id}/subjects/edit/{subjectId}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->editSubject($subjectId);
+      break;
+
+    case 'supervisor/departments/{id}/subjects/delete/{subjectId}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->deleteSubject($subjectId);
+      break;
+
+    case 'supervisor/requests':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->requests();
+      break;
+
+    case 'supervisor/requests/view/{id}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->viewRequest($id);
+      break;
+
+    case 'supervisor/requests/respond/{id}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->respondToRequest($id);
+      break;
+
+    case 'supervisor/classes':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->classes();
+      break;
+
+    case 'supervisor/classes/add':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->addClass();
+      break;
+
+    case 'supervisor/classes/delete/{id}':
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->deleteClass($id);
       break;
 
     default:

@@ -33,15 +33,20 @@ class Subject
   public function getByDepartment($departmentId)
   {
     $sql = "SELECT 
-              id, 
-              department_id,
-              subject_code, 
-              name as subject_name, 
-              day, 
-              hour
-            FROM subjects 
-            WHERE department_id = ? 
-            ORDER BY name";
+              s.id, 
+              s.department_id,
+              s.subject_code, 
+              s.name as subject_name, 
+              s.day, 
+              s.hour,
+              s.is_office_hour,
+              s.request_id,
+              s.teacher_id,
+              u.name as teacher_name
+            FROM subjects s
+            LEFT JOIN users u ON s.teacher_id = u.id
+            WHERE s.department_id = ? 
+            ORDER BY s.day, s.hour";
     $stmt = $this->db->query($sql, [$departmentId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
@@ -51,9 +56,12 @@ class Subject
    */
   public function getById($id)
   {
-    $sql = "SELECT s.*, d.name as department_name 
+    $sql = "SELECT s.*, 
+                  d.name as department_name,
+                  u.name as teacher_name
             FROM subjects s
             JOIN departments d ON s.department_id = d.id
+            LEFT JOIN users u ON s.teacher_id = u.id
             WHERE s.id = ?";
     $stmt = $this->db->query($sql, [$id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -73,17 +81,27 @@ class Subject
   /**
    * Create a new subject
    */
-  public function create($subjectCode, $subjectName, $departmentId, $day, $hour)
+  public function create($subjectCode, $subjectName, $departmentId, $day, $hour, $classId, $isOfficeHour = false, $requestId = null, $teacherId = null)
   {
     try {
-      // Check if subject with same code exists in department
-      if ($this->existsInDepartment($subjectCode, $departmentId)) {
+      // Check if subject with same code exists in department (skip for office hours)
+      if (!$isOfficeHour && $this->existsInDepartment($subjectCode, $departmentId)) {
         throw new \Exception("A subject with code '{$subjectCode}' already exists in this department");
       }
 
-      $sql = "INSERT INTO subjects (subject_code, name, department_id, day, hour) 
-              VALUES (?, ?, ?, ?, ?)";
-      $result = $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour]);
+      $sql = "INSERT INTO subjects (subject_code, name, department_id, day, hour, class_id, is_office_hour, request_id, teacher_id) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      $result = $this->db->query($sql, [
+        $subjectCode,
+        $subjectName,
+        $departmentId,
+        $day,
+        $hour,
+        $classId,
+        $isOfficeHour ? 1 : 0,
+        $requestId,
+        $teacherId
+      ]);
 
       if ($result !== false) {
         return $this->db->getConnection()->lastInsertId();
@@ -98,12 +116,21 @@ class Subject
   /**
    * Update an existing subject
    */
-  public function update($id, $subjectCode, $subjectName, $departmentId, $day, $hour)
+  public function update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId = null)
   {
     $sql = "UPDATE subjects 
-            SET subject_code = ?, name = ?, department_id = ?, day = ?, hour = ? 
+            SET subject_code = ?, name = ?, department_id = ?, day = ?, hour = ?, teacher_id = ? 
             WHERE id = ?";
-    return $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour, $id]);
+    return $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId, $id]);
+  }
+
+  /**
+   * Update a subject's teacher
+   */
+  public function updateTeacher($id, $teacherId)
+  {
+    $sql = "UPDATE subjects SET teacher_id = ? WHERE id = ?";
+    return $this->db->query($sql, [$teacherId, $id]);
   }
 
   /**

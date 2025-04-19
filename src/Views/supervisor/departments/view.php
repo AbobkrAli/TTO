@@ -88,6 +88,22 @@ ob_start();
     background-color: #e8f5e9;
     color: #388e3c;
   }
+
+  /* Office Hour Styles */
+  .office-hour-item {
+    background-color: rgba(156, 39, 176, 0.1) !important;
+    border-left: 3px solid #9c27b0 !important;
+  }
+
+  .office-hour-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background-color: #9c27b0;
+    color: white;
+  }
 </style>
 
 <div class="container-fluid">
@@ -126,10 +142,12 @@ ob_start();
     <li class="nav-item" role="presentation">
       <button class="nav-link position-relative" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests"
         type="button" role="tab" aria-controls="requests" aria-selected="false">
-        <i class="bi bi-bell me-1"></i> Pending Requests
+        <i class="bi bi-bell me-1"></i> Requests
         <?php
         $pendingCount = 0;
+        $totalRequests = 0;
         if (isset($requests) && is_array($requests)) {
+          $totalRequests = count($requests);
           foreach ($requests as $request) {
             if ($request['status'] === 'pending') {
               $pendingCount++;
@@ -139,6 +157,11 @@ ob_start();
             echo '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">';
             echo $pendingCount;
             echo '<span class="visually-hidden">pending requests</span>';
+            echo '</span>';
+          } elseif ($totalRequests > 0) {
+            echo '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary">';
+            echo $totalRequests;
+            echo '<span class="visually-hidden">total requests</span>';
             echo '</span>';
           }
         }
@@ -241,16 +264,38 @@ ob_start();
 
                   if (isset($scheduledSubjects[$currentDay][$hour])) {
                     $subject = $scheduledSubjects[$currentDay][$hour];
-                    echo '<div class="position-absolute top-0 start-0 end-0 bottom-0 p-2" 
-                               style="background-color: rgba(37, 117, 252, 0.1); border-left: 3px solid #2575fc;">';
+                    $isOfficeHour = isset($subject['is_office_hour']) && $subject['is_office_hour'] == 1;
+
+                    echo '<div class="position-absolute top-0 start-0 end-0 bottom-0 p-2 ' . ($isOfficeHour ? 'office-hour-item' : '') . '" 
+                               style="background-color: ' . ($isOfficeHour ? 'rgba(156, 39, 176, 0.1)' : 'rgba(37, 117, 252, 0.1)') . '; 
+                               border-left: 3px solid ' . ($isOfficeHour ? '#9c27b0' : '#2575fc') . ';">';
+
                     echo '<div class="fw-bold">' . htmlspecialchars($subject['subject_name']) . '</div>';
                     echo '<div class="small text-muted">' . htmlspecialchars($subject['subject_code']) . '</div>';
+
+                    // Display teacher information
+                    if (isset($subject['teacher_name']) && !empty($subject['teacher_name'])) {
+                      echo '<div class="small mt-1">';
+                      echo '<i class="bi bi-person-circle"></i> ' . htmlspecialchars($subject['teacher_name']);
+                      echo '</div>';
+                    }
+
+                    if ($isOfficeHour) {
+                      echo '<span class="office-hour-badge">Office Hour</span>';
+                    }
+
                     echo '<div class="position-absolute top-0 end-0 p-1">';
                     echo '<button class="btn btn-sm btn-link text-danger delete-subject" 
                                   data-subject-id="' . $subject['id'] . '" 
-                                  title="Delete Subject">';
+                                  data-subject-name="' . htmlspecialchars($subject['subject_name']) . '"
+                                  title="Delete ' . ($isOfficeHour ? 'Office Hour' : 'Subject') . '">';
                     echo '<i class="bi bi-trash"></i>';
                     echo '</button>';
+                    echo '<a href="/supervisor/subjects/edit/' . $subject['id'] . '" 
+                                class="btn btn-sm btn-link text-primary" 
+                                title="Edit ' . ($isOfficeHour ? 'Office Hour' : 'Subject') . '">';
+                    echo '<i class="bi bi-pencil"></i>';
+                    echo '</a>';
                     echo '</div>';
                     echo '</div>';
                   }
@@ -332,6 +377,26 @@ ob_start();
                 <label for="name" class="form-label">Subject Name</label>
                 <input type="text" class="form-control" id="name" name="name" required>
               </div>
+              <div class="mb-3">
+                <label for="teacher_id" class="form-label">Assign Teacher</label>
+                <select class="form-select" id="teacher_id" name="teacher_id">
+                  <option value="">-- Select Teacher (Optional) --</option>
+                  <?php foreach ($teachers as $teacher): ?>
+                    <option value="<?= $teacher['id'] ?>"><?= htmlspecialchars($teacher['name']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <div class="form-text">Assign a teacher to this subject or leave unassigned</div>
+              </div>
+              <div class="mb-3">
+                <label for="class_id" class="form-label">Class</label>
+                <select class="form-select" id="class_id" name="class_id" required>
+                  <option value="">-- Select Class --</option>
+                  <?php foreach ($classes as $class): ?>
+                    <option value="<?= $class['id'] ?>"><?= htmlspecialchars($class['name']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <div class="form-text">Select the class for this subject</div>
+              </div>
               <button type="submit" class="btn btn-primary">Add Subject</button>
             </form>
           </div>
@@ -394,8 +459,16 @@ ob_start();
         document.querySelectorAll('.delete-subject').forEach(button => {
           button.addEventListener('click', function (e) {
             e.preventDefault();
-            if (confirm('Are you sure you want to delete this subject?')) {
-              window.location.href = '/supervisor/subjects/delete/' + this.dataset.subjectId;
+            const subjectId = this.dataset.subjectId;
+            const subjectName = this.dataset.subjectName;
+
+            if (confirm('Are you sure you want to delete "' + subjectName + '"? This action cannot be undone.')) {
+              // Create and submit a form to delete the subject
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = '/supervisor/subjects/delete/' + subjectId;
+              document.body.appendChild(form);
+              form.submit();
             }
           });
         });
@@ -419,6 +492,7 @@ ob_start();
                 <tr>
                   <th>Name</th>
                   <th>Email</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -427,7 +501,16 @@ ob_start();
                     <tr>
                       <td><?php echo htmlspecialchars($teacher['name']); ?></td>
                       <td><?php echo htmlspecialchars($teacher['email']); ?></td>
-
+                      <td>
+                        <a href="/supervisor/users/view/<?php echo $teacher['id']; ?>"
+                          class="btn btn-sm btn-view btn-action">
+                          <i class="bi bi-eye"></i> View
+                        </a>
+                        <a href="/supervisor/users/edit/<?php echo $teacher['id']; ?>"
+                          class="btn btn-sm btn-edit btn-action">
+                          <i class="bi bi-pencil"></i> Edit
+                        </a>
+                      </td>
                     </tr>
                   <?php endforeach; ?>
                 <?php else: ?>
@@ -445,7 +528,7 @@ ob_start();
     <!-- Requests Tab -->
     <div class="tab-pane fade" id="requests" role="tabpanel" aria-labelledby="requests-tab">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4>Pending Schedule Requests</h4>
+        <h4>Schedule Requests</h4>
       </div>
 
       <div class="card department-card">
@@ -458,37 +541,56 @@ ob_start();
                   <th>Subject</th>
                   <th>Day & Time</th>
                   <th>Requested On</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <?php if (isset($requests) && is_array($requests) && !empty($requests)): ?>
                   <?php
-                  $hasPendingRequests = false;
+                  $hasRequests = false;
                   foreach ($requests as $request):
-                    if ($request['status'] === 'pending'):
-                      $hasPendingRequests = true;
-                      ?>
-                      <tr>
-                        <td><?php echo htmlspecialchars($request['teacher_name']); ?></td>
-                        <td>
-                          <?php if (!empty($request['subject_name'])): ?>
-                            <div><?php echo htmlspecialchars($request['subject_name']); ?></div>
-                            <div class="small text-muted"><?php echo htmlspecialchars($request['subject_code'] ?? 'No code'); ?>
-                            </div>
-                          <?php else: ?>
-                            <span class="text-muted">Not specified</span>
-                          <?php endif; ?>
-                        </td>
-                        <td>
-                          <?php echo htmlspecialchars($request['day']); ?>
-                          <div class="small text-muted">
-                            <?php echo sprintf('%02d:00', (int) $request['hour']); ?> -
-                            <?php echo sprintf('%02d:00', (int) $request['hour'] + 1); ?>
+                    $hasRequests = true;
+                    $statusClass = '';
+                    $statusLabel = '';
+
+                    if ($request['status'] === 'pending') {
+                      $statusClass = 'bg-warning text-dark';
+                      $statusLabel = 'Pending';
+                    } elseif ($request['status'] === 'approved') {
+                      $statusClass = 'bg-success';
+                      $statusLabel = 'Approved';
+                    } elseif ($request['status'] === 'declined') {
+                      $statusClass = 'bg-danger';
+                      $statusLabel = 'Declined';
+                    }
+                    ?>
+                    <tr>
+                      <td><?php echo htmlspecialchars($request['teacher_name']); ?></td>
+                      <td>
+                        <?php if (!empty($request['subject_name'])): ?>
+                          <div><?php echo htmlspecialchars($request['subject_name']); ?></div>
+                          <div class="small text-muted"><?php echo htmlspecialchars($request['subject_code'] ?? 'No code'); ?>
                           </div>
-                        </td>
-                        <td><?php echo date('M d, Y', strtotime($request['created_at'])); ?></td>
-                        <td>
+                        <?php else: ?>
+                          <span class="text-muted">Not specified</span>
+                        <?php endif; ?>
+                      </td>
+                      <td>
+                        <?php echo htmlspecialchars($request['day']); ?>
+                        <div class="small text-muted">
+                          <?php echo sprintf('%02d:00', (int) $request['hour']); ?> -
+                          <?php echo sprintf('%02d:00', (int) $request['hour'] + 1); ?>
+                        </div>
+                      </td>
+                      <td><?php echo date('M d, Y', strtotime($request['created_at'])); ?></td>
+                      <td>
+                        <span class="badge <?php echo $statusClass; ?>">
+                          <?php echo $statusLabel; ?>
+                        </span>
+                      </td>
+                      <td>
+                        <?php if ($request['status'] === 'pending'): ?>
                           <div class="btn-group" role="group">
                             <a href="/supervisor/requests/approve/<?php echo $request['id']; ?>"
                               class="btn btn-sm btn-success"
@@ -500,21 +602,21 @@ ob_start();
                               <i class="bi bi-x-lg"></i> Decline
                             </a>
                           </div>
-                        </td>
-                      </tr>
-                      <?php
-                    endif;
-                  endforeach;
+                        <?php else: ?>
+                          <span class="text-muted">No actions available</span>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach;
 
-                  if (!$hasPendingRequests):
-                    ?>
+                  if (!$hasRequests): ?>
                     <tr>
-                      <td colspan="5" class="text-center py-4">No pending requests for this department.</td>
+                      <td colspan="6" class="text-center py-4">No requests for this department.</td>
                     </tr>
                   <?php endif; ?>
                 <?php else: ?>
                   <tr>
-                    <td colspan="5" class="text-center py-4">No pending requests for this department.</td>
+                    <td colspan="6" class="text-center py-4">No requests for this department.</td>
                   </tr>
                 <?php endif; ?>
               </tbody>

@@ -377,6 +377,31 @@ ob_start();
       </div>
     </div>
   </div>
+
+  <!-- Quick Actions Card -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="list-group">
+          <a href="/supervisor/users" class="list-group-item list-group-item-action">
+            <i class="bi bi-people"></i> Manage Users
+          </a>
+          <a href="/supervisor/departments" class="list-group-item list-group-item-action">
+            <i class="bi bi-building"></i> Manage Departments
+          </a>
+          <a href="/supervisor/classes" class="list-group-item list-group-item-action">
+            <i class="bi bi-mortarboard"></i> Manage Classes
+          </a>
+          <a href="/supervisor/requests" class="list-group-item list-group-item-action">
+            <i class="bi bi-envelope"></i> View Requests
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- User Search JavaScript -->
