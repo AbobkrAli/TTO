@@ -419,7 +419,6 @@ ob_start();
                 <tr>
                   <th>Name</th>
                   <th>Email</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -428,16 +427,7 @@ ob_start();
                     <tr>
                       <td><?php echo htmlspecialchars($teacher['name']); ?></td>
                       <td><?php echo htmlspecialchars($teacher['email']); ?></td>
-                      <td>
-                        <a href="/supervisor/users/view/<?php echo $teacher['id']; ?>"
-                          class="btn btn-sm btn-view btn-action">
-                          <i class="bi bi-eye"></i> View
-                        </a>
-                        <a href="/supervisor/users/edit/<?php echo $teacher['id']; ?>"
-                          class="btn btn-sm btn-edit btn-action">
-                          <i class="bi bi-pencil"></i> Edit
-                        </a>
-                      </td>
+
                     </tr>
                   <?php endforeach; ?>
                 <?php else: ?>

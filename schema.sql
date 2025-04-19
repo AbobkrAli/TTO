@@ -43,6 +43,7 @@ CREATE TABLE subjects (
   subject_code VARCHAR(50) NOT NULL,
   name VARCHAR(255) NOT NULL COMMENT 'Subject name',
   department_id INT NOT NULL COMMENT 'Department this subject belongs to',
+  teacher_id INT NULL COMMENT 'Teacher assigned to this subject',
   day ENUM('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday') NOT NULL,
   hour INT NOT NULL CHECK (hour >= 9 AND hour <= 17) COMMENT 'Hour of the class (9-17)',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -52,9 +53,14 @@ CREATE TABLE subjects (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
     
+  FOREIGN KEY (teacher_id) REFERENCES users(id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE,
+    
   UNIQUE KEY uk_department_day_hour (department_id, day, hour) COMMENT 'Prevent scheduling conflicts in the same timeslot',
   INDEX idx_subject_department (department_id),
-  INDEX idx_subject_day_hour (day, hour)
+  INDEX idx_subject_day_hour (day, hour),
+  INDEX idx_subject_teacher (teacher_id)
 ) ENGINE=InnoDB;
 
 -- Requests table (for schedule change requests)
@@ -121,4 +127,4 @@ CONSTRAINTS:
    - Hours must be between 9 and 17 (9 AM to 5 PM)
    - Days must be from Sunday to Thursday
    - A department cannot have two subjects at the same day and hour (schedule conflict prevention)
-*/ 
+*/

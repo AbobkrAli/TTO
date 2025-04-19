@@ -262,7 +262,7 @@ ob_start();
         </a>
       </div>
     </div>
-    
+
     <?php if (!empty($departments)): ?>
       <?php $counter = 0; ?>
       <?php foreach ($departments as $dept): ?>

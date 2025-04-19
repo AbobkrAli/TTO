@@ -3,6 +3,12 @@ $pageTitle = 'Edit Subject';
 $activePage = 'departments';
 
 ob_start();
+
+// Add this after fetching the subject
+$teacherQuery = "SELECT id, name FROM users WHERE department_id = ? AND role = 'teacher'";
+$stmt = $conn->prepare($teacherQuery);
+$stmt->execute([$subject['department_id']]);
+$teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <style>
@@ -92,6 +98,18 @@ ob_start();
               </div>
             </div>
 
+            <div class="form-group">
+              <label>Assign Teacher:</label>
+              <select name="teacher_id" required>
+                <option value="">Select Teacher</option>
+                <?php foreach ($teachers as $teacher): ?>
+                  <option value="<?php echo $teacher['id']; ?>" <?php echo ($teacher['id'] == $subject['teacher_id']) ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($teacher['name']); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
             <div class="d-flex justify-content-between">
               <a href="/supervisor/departments/view/<?php echo $subject['department_id']; ?>" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Back
@@ -110,4 +128,9 @@ ob_start();
 <?php
 $content = ob_get_clean();
 require dirname(dirname(dirname(dirname(__DIR__)))) . '/Views/layout.php';
+
+// Update the SQL query in the POST handler
+$query = "UPDATE subjects SET subject_code = ?, name = ?, day = ?, hour = ?, teacher_id = ? WHERE id = ?";
+$stmt = $conn->prepare($query);
+$stmt->execute([$subject_code, $name, $day, $hour, $teacher_id, $id]);
 ?>
