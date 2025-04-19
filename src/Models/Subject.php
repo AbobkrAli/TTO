@@ -75,15 +75,24 @@ class Subject
    */
   public function create($subjectCode, $subjectName, $departmentId, $day, $hour)
   {
-    // Check if subject with same code exists in department
-    if ($this->existsInDepartment($subjectCode, $departmentId)) {
-      throw new \Exception("A subject with code '{$subjectCode}' already exists in this department");
-    }
+    try {
+      // Check if subject with same code exists in department
+      if ($this->existsInDepartment($subjectCode, $departmentId)) {
+        throw new \Exception("A subject with code '{$subjectCode}' already exists in this department");
+      }
 
-    $sql = "INSERT INTO subjects (subject_code, name, department_id, day, hour) 
-            VALUES (?, ?, ?, ?, ?)";
-    $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour]);
-    return $this->db->getConnection()->lastInsertId();
+      $sql = "INSERT INTO subjects (subject_code, name, department_id, day, hour) 
+              VALUES (?, ?, ?, ?, ?)";
+      $result = $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour]);
+
+      if ($result !== false) {
+        return $this->db->getConnection()->lastInsertId();
+      }
+      return false;
+    } catch (\PDOException $e) {
+      error_log("Database error in Subject::create: " . $e->getMessage());
+      throw new \Exception("Database error occurred while creating subject: " . $e->getMessage());
+    }
   }
 
   /**

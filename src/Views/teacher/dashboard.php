@@ -218,8 +218,17 @@ ob_start();
 <div class="container-fluid">
   <!-- Welcome Banner -->
   <div class="welcome-banner">
-    <h2><i class="bi bi-mortarboard"></i> Welcome, <?php echo htmlspecialchars($user['fullname']); ?>!</h2>
-    <p>Access your teaching resources and manage your profile from this dashboard.</p>
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2><i class="bi bi-mortarboard"></i> Welcome,
+          <?php echo htmlspecialchars($user['fullname'] ?? $user['name'] ?? 'Teacher'); ?>!
+        </h2>
+        <p>Access your teaching resources and manage your schedule from this dashboard.</p>
+      </div>
+      <a href="/teacher/schedule" class="btn btn-light px-4 py-2">
+        <i class="bi bi-calendar3"></i> View Department Schedule
+      </a>
+    </div>
   </div>
 
   <!-- Department Subjects Section -->
@@ -251,22 +260,24 @@ ob_start();
             // Remove duplicates based on subject code
             $uniqueSubjects = [];
             foreach ($allSubjects as $subject) {
-              $uniqueSubjects[$subject['code']] = $subject;
+              $uniqueSubjects[$subject['subject_code']] = $subject;
             }
 
             foreach ($uniqueSubjects as $subject) {
               echo '<tr>';
-              echo '<td>' . htmlspecialchars($subject['code']) . '</td>';
-              echo '<td>' . htmlspecialchars($subject['name']) . '</td>';
-              echo '<td>' . htmlspecialchars($subject['day_of_week']) . '</td>';
-              echo '<td>' .
-                htmlspecialchars(date('H:i', strtotime($subject['start_time']))) .
-                ' - ' .
-                htmlspecialchars(date('H:i', strtotime($subject['end_time']))) .
-                '</td>';
-              echo '<td>' .
-                (!empty($subject['room']) ? 'Room ' . htmlspecialchars($subject['room']) : '-') .
-                '</td>';
+              echo '<td>' . htmlspecialchars($subject['subject_code']) . '</td>';
+              echo '<td>' . htmlspecialchars($subject['subject_name']) . '</td>';
+              echo '<td>' . htmlspecialchars($subject['day']) . '</td>';
+
+              // Format hour as a time display (e.g., "14:00")
+              $hour = isset($subject['hour']) ? (int) $subject['hour'] : 0;
+              $hourDisplay = sprintf('%02d:00', $hour);
+              $nextHourDisplay = sprintf('%02d:00', $hour + 1);
+
+              echo '<td>' . $hourDisplay . ' - ' . $nextHourDisplay . '</td>';
+
+              // Room information may not be present in the current data model
+              echo '<td>' . (!empty($subject['room']) ? 'Room ' . htmlspecialchars($subject['room']) : '-') . '</td>';
               echo '</tr>';
             }
             ?>

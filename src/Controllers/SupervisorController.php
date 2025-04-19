@@ -7,12 +7,14 @@ use App\Models\Department;
 use App\Models\Subject;
 use App\Session;
 use App\Authentication;
+use App\Models\Request;
 
 class SupervisorController extends Controller
 {
   private $userModel;
   private $departmentModel;
   private $subjectModel;
+  private $requestModel;
 
   public function __construct()
   {
@@ -24,6 +26,7 @@ class SupervisorController extends Controller
     $this->userModel = new User();
     $this->departmentModel = new Department();
     $this->subjectModel = new Subject();
+    $this->requestModel = new Request();
   }
 
   /**
@@ -250,6 +253,9 @@ class SupervisorController extends Controller
       $subjects = [];
     }
 
+    // Get pending requests for this department
+    $requests = $this->requestModel->getByDepartment($id);
+
     // Get selected day from query parameter
     $selectedDay = $_GET['day'] ?? 'Monday';
 
@@ -268,6 +274,10 @@ class SupervisorController extends Controller
       redirect('/supervisor/departments/view/' . $departmentId);
     }
 
+    // Debug information
+    error_log("Subject creation attempt for department: " . $departmentId);
+    error_log("POST data: " . print_r($_POST, true));
+
     // Validate input
     $code = trim($_POST['code'] ?? '');
     $name = trim($_POST['name'] ?? '');
@@ -275,29 +285,45 @@ class SupervisorController extends Controller
     $hour = trim($_POST['hour'] ?? '');
 
     if (empty($code) || empty($name) || empty($day) || empty($hour)) {
-      $_SESSION['error'] = 'Subject code, name, day, and hour are required';
-      redirect('/supervisor/departments/view/' . $departmentId);
+      $missing = [];
+      if (empty($code))
+        $missing[] = 'code';
+      if (empty($name))
+        $missing[] = 'name';
+      if (empty($day))
+        $missing[] = 'day';
+      if (empty($hour))
+        $missing[] = 'hour';
+
+      $_SESSION['error'] = 'Missing required fields: ' . implode(', ', $missing);
+      error_log("Missing fields: " . implode(', ', $missing));
+      redirect('/supervisor/departments/view/' . $departmentId . '?day=' . urlencode($day));
     }
 
     // Validate hour is between 9 and 17
     $hour = (int) $hour;
     if ($hour < 9 || $hour > 17) {
       $_SESSION['error'] = 'Hour must be between 9 and 17';
-      redirect('/supervisor/departments/view/' . $departmentId);
+      error_log("Invalid hour value: " . $hour);
+      redirect('/supervisor/departments/view/' . $departmentId . '?day=' . urlencode($day));
     }
 
     try {
       // Create subject - pass parameters in correct order: code, name, departmentId, day, hour
-      if ($this->subjectModel->create($code, $name, $departmentId, $day, $hour)) {
-        $_SESSION['success'] = 'Subject added successfully';
+      $result = $this->subjectModel->create($code, $name, $departmentId, $day, $hour);
+      if ($result) {
+        $_SESSION['success'] = "Subject '{$name}' added successfully";
+        error_log("Subject created successfully. ID: " . $result);
       } else {
-        $_SESSION['error'] = 'Failed to add subject';
+        $_SESSION['error'] = 'Failed to add subject. Please check the logs for details.';
+        error_log("Subject creation failed for unknown reason");
       }
     } catch (\Exception $e) {
       $_SESSION['error'] = $e->getMessage();
+      error_log("Exception during subject creation: " . $e->getMessage());
     }
 
-    redirect('/supervisor/departments/view/' . $departmentId);
+    redirect('/supervisor/departments/view/' . $departmentId . '?day=' . urlencode($day));
   }
 
   /**
@@ -452,5 +478,75 @@ class SupervisorController extends Controller
       // Just display the add teacher form
       require_once dirname(__DIR__) . '/Views/supervisor/departments/teachers/add.php';
     }
+  }
+
+  /**
+   * Approve a schedule request
+   * 
+   * @param int $id Request ID
+   */
+  public function approveRequest($id)
+  {
+    // Get the request
+    $request = $this->requestModel->getById($id);
+
+    if (!$request) {
+      $_SESSION['error'] = 'Request not found';
+      redirect('/supervisor/departments');
+    }
+
+    // Check if request is pending
+    if ($request['status'] !== 'pending') {
+      $_SESSION['error'] = 'This request has already been processed';
+      redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
+    }
+
+    try {
+      // Update request status
+      $this->requestModel->updateStatus($id, 'approved');
+
+      // Create subject from the request
+      $this->subjectModel->create(
+        $request['subject_code'],
+        $request['subject_name'],
+        $request['department_id'],
+        $request['day'],
+        $request['hour']
+      );
+
+      $_SESSION['success'] = 'Request approved and subject created successfully';
+    } catch (\Exception $e) {
+      $_SESSION['error'] = 'Error approving request: ' . $e->getMessage();
+    }
+
+    redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
+  }
+
+  /**
+   * Decline a schedule request
+   * 
+   * @param int $id Request ID
+   */
+  public function declineRequest($id)
+  {
+    // Get the request
+    $request = $this->requestModel->getById($id);
+
+    if (!$request) {
+      $_SESSION['error'] = 'Request not found';
+      redirect('/supervisor/departments');
+    }
+
+    // Check if request is pending
+    if ($request['status'] !== 'pending') {
+      $_SESSION['error'] = 'This request has already been processed';
+      redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
+    }
+
+    // Update request status
+    $this->requestModel->updateStatus($id, 'declined');
+
+    $_SESSION['success'] = 'Request declined successfully';
+    redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
   }
 }

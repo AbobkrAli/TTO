@@ -123,6 +123,28 @@ ob_start();
         <i class="bi bi-person-video3 me-1"></i> Teachers
       </button>
     </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link position-relative" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests"
+        type="button" role="tab" aria-controls="requests" aria-selected="false">
+        <i class="bi bi-bell me-1"></i> Pending Requests
+        <?php
+        $pendingCount = 0;
+        if (isset($requests) && is_array($requests)) {
+          foreach ($requests as $request) {
+            if ($request['status'] === 'pending') {
+              $pendingCount++;
+            }
+          }
+          if ($pendingCount > 0) {
+            echo '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">';
+            echo $pendingCount;
+            echo '<span class="visually-hidden">pending requests</span>';
+            echo '</span>';
+          }
+        }
+        ?>
+      </button>
+    </li>
   </ul>
 
   <!-- Tab Content -->
@@ -135,6 +157,23 @@ ob_start();
           <i class="bi bi-plus-circle me-1"></i> Add Subject
         </button>
       </div>
+
+      <!-- Display messages -->
+      <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <?php echo htmlspecialchars($_SESSION['error']); ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+      <?php endif; ?>
+
+      <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <?php echo htmlspecialchars($_SESSION['success']); ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+      <?php endif; ?>
 
       <!-- Day Selection -->
       <div class="mb-4">
@@ -182,6 +221,18 @@ ob_start();
                   $scheduledSubjects[$day][$hour] = $subject;
                 }
 
+                // Group requests by day and hour
+                $pendingRequests = [];
+                if (isset($requests) && is_array($requests)) {
+                  foreach ($requests as $request) {
+                    if ($request['status'] === 'pending') {
+                      $day = $request['day'];
+                      $hour = (int) $request['hour'];
+                      $pendingRequests[$day][$hour][] = $request;
+                    }
+                  }
+                }
+
                 $currentDay = $selectedDay ?? 'Monday';
                 foreach ($timeSlots as $hour => $displayTime) {
                   echo '<tr>';
@@ -202,6 +253,45 @@ ob_start();
                     echo '</button>';
                     echo '</div>';
                     echo '</div>';
+                  }
+                  // Check if there are pending requests for this time slot
+                  elseif (isset($pendingRequests[$currentDay][$hour]) && !empty($pendingRequests[$currentDay][$hour])) {
+                    foreach ($pendingRequests[$currentDay][$hour] as $request) {
+                      echo '<div class="position-absolute top-0 start-0 end-0 bottom-0 p-2" 
+                                 style="background-color: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107;">';
+
+                      echo '<div class="d-flex justify-content-between align-items-start">';
+                      echo '<div>';
+                      echo '<div class="fw-bold">' .
+                        (!empty($request['subject_name']) ? htmlspecialchars($request['subject_name']) : 'Unnamed Subject') .
+                        '</div>';
+                      echo '<div class="small text-muted">' .
+                        (!empty($request['subject_code']) ? htmlspecialchars($request['subject_code']) : 'No code') .
+                        '</div>';
+                      echo '<div class="small mt-1">';
+                      echo '<span class="badge bg-warning">Request by: ' . htmlspecialchars($request['teacher_name']) . '</span>';
+                      echo '</div>';
+                      echo '</div>';
+
+                      echo '<div class="d-flex">';
+                      echo '<a href="/supervisor/requests/approve/' . $request['id'] . '" 
+                                class="btn btn-sm btn-success me-1" 
+                                title="Approve Request"
+                                onclick="return confirm(\'Are you sure you want to approve this request?\');">';
+                      echo '<i class="bi bi-check-lg"></i> Approve';
+                      echo '</a>';
+
+                      echo '<a href="/supervisor/requests/decline/' . $request['id'] . '" 
+                                class="btn btn-sm btn-danger" 
+                                title="Decline Request"
+                                onclick="return confirm(\'Are you sure you want to decline this request?\');">';
+                      echo '<i class="bi bi-x-lg"></i> Decline';
+                      echo '</a>';
+                      echo '</div>';
+                      echo '</div>';
+
+                      echo '</div>';
+                    }
                   } else {
                     echo '<button class="btn btn-light btn-sm position-absolute top-50 start-50 translate-middle add-subject-btn" 
                                   data-bs-toggle="modal" 
@@ -232,7 +322,7 @@ ob_start();
           </div>
           <div class="modal-body">
             <form action="/supervisor/departments/<?= $department['id'] ?>/subjects/add" method="POST">
-              <input type="hidden" name="day" id="addSubjectDay">
+              <input type="hidden" name="day" id="addSubjectDay" value="<?= $selectedDay ?? 'Monday' ?>">
               <input type="hidden" name="hour" id="addSubjectHour">
               <div class="mb-3">
                 <label for="code" class="form-label">Subject Code</label>
@@ -255,6 +345,26 @@ ob_start();
         const addSubjectModal = document.getElementById('addSubjectModal');
         const addSubjectDayInput = document.getElementById('addSubjectDay');
         const addSubjectHourInput = document.getElementById('addSubjectHour');
+
+        // Pre-select the current day when modal is opened
+        addSubjectModal.addEventListener('show.bs.modal', function (event) {
+          // Get the button that triggered the modal
+          const button = event.relatedTarget;
+
+          // If opened via a time slot button, use that day and hour
+          if (button.classList.contains('add-subject-btn')) {
+            const day = button.dataset.day;
+            const hour = button.dataset.hour;
+            addSubjectDayInput.value = day;
+            addSubjectHourInput.value = hour;
+          } else {
+            // Otherwise use the currently selected day
+            const activeDay = document.querySelector('.day-btn.active').dataset.day;
+            addSubjectDayInput.value = activeDay;
+            // Default to first hour if not specified
+            addSubjectHourInput.value = '9';
+          }
+        });
 
         // Handle day selection
         document.querySelectorAll('.day-btn').forEach(button => {
@@ -333,6 +443,88 @@ ob_start();
                 <?php else: ?>
                   <tr>
                     <td colspan="3" class="text-center p-4">No teachers assigned to this department.</td>
+                  </tr>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Requests Tab -->
+    <div class="tab-pane fade" id="requests" role="tabpanel" aria-labelledby="requests-tab">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>Pending Schedule Requests</h4>
+      </div>
+
+      <div class="card department-card">
+        <div class="card-body p-0">
+          <div class="table-container">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Teacher</th>
+                  <th>Subject</th>
+                  <th>Day & Time</th>
+                  <th>Requested On</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (isset($requests) && is_array($requests) && !empty($requests)): ?>
+                  <?php
+                  $hasPendingRequests = false;
+                  foreach ($requests as $request):
+                    if ($request['status'] === 'pending'):
+                      $hasPendingRequests = true;
+                      ?>
+                      <tr>
+                        <td><?php echo htmlspecialchars($request['teacher_name']); ?></td>
+                        <td>
+                          <?php if (!empty($request['subject_name'])): ?>
+                            <div><?php echo htmlspecialchars($request['subject_name']); ?></div>
+                            <div class="small text-muted"><?php echo htmlspecialchars($request['subject_code'] ?? 'No code'); ?>
+                            </div>
+                          <?php else: ?>
+                            <span class="text-muted">Not specified</span>
+                          <?php endif; ?>
+                        </td>
+                        <td>
+                          <?php echo htmlspecialchars($request['day']); ?>
+                          <div class="small text-muted">
+                            <?php echo sprintf('%02d:00', (int) $request['hour']); ?> -
+                            <?php echo sprintf('%02d:00', (int) $request['hour'] + 1); ?>
+                          </div>
+                        </td>
+                        <td><?php echo date('M d, Y', strtotime($request['created_at'])); ?></td>
+                        <td>
+                          <div class="btn-group" role="group">
+                            <a href="/supervisor/requests/approve/<?php echo $request['id']; ?>"
+                              class="btn btn-sm btn-success"
+                              onclick="return confirm('Are you sure you want to approve this request?');">
+                              <i class="bi bi-check-lg"></i> Approve
+                            </a>
+                            <a href="/supervisor/requests/decline/<?php echo $request['id']; ?>" class="btn btn-sm btn-danger"
+                              onclick="return confirm('Are you sure you want to decline this request?');">
+                              <i class="bi bi-x-lg"></i> Decline
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                      <?php
+                    endif;
+                  endforeach;
+
+                  if (!$hasPendingRequests):
+                    ?>
+                    <tr>
+                      <td colspan="5" class="text-center py-4">No pending requests for this department.</td>
+                    </tr>
+                  <?php endif; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="5" class="text-center py-4">No pending requests for this department.</td>
                   </tr>
                 <?php endif; ?>
               </tbody>

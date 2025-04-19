@@ -44,7 +44,7 @@ class Session
   {
     self::set('user_id', $user['id']);
     self::set('user_email', $user['email']);
-    self::set('user_fullname', $user['fullname']);
+    self::set('user_fullname', $user['name']);
     self::set('user_role', $user['role']);
 
     // Check if department_id exists in the user array before setting it
