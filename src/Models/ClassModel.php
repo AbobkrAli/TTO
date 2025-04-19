@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Database;
+use PDO;
 
 class ClassModel
 {
@@ -20,7 +21,7 @@ class ClassModel
   {
     $sql = "SELECT * FROM classes ORDER BY name";
     $stmt = $this->db->query($sql);
-    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 
   /**
@@ -30,7 +31,7 @@ class ClassModel
   {
     $sql = "SELECT * FROM classes WHERE id = ?";
     $stmt = $this->db->query($sql, [$id]);
-    return $stmt->fetch(\PDO::FETCH_ASSOC);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
   /**
