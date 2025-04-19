@@ -58,7 +58,17 @@ class ClassModel
    */
   public function delete($id)
   {
-    $sql = "DELETE FROM classes WHERE id = ?";
-    return $this->db->query($sql, [$id]);
+    try {
+      // First, update any subjects that reference this class to set class_id to NULL
+      $updateSql = "UPDATE subjects SET class_id = NULL WHERE class_id = ?";
+      $this->db->query($updateSql, [$id]);
+
+      // Then delete the class
+      $deleteSql = "DELETE FROM classes WHERE id = ?";
+      return $this->db->query($deleteSql, [$id]);
+    } catch (\PDOException $e) {
+      error_log("Database error in ClassModel::delete: " . $e->getMessage());
+      throw new \Exception("Database error occurred while deleting class: " . $e->getMessage());
+    }
   }
 }

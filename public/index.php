@@ -252,8 +252,13 @@ try {
       break;
 
     case 'supervisor/classes/delete/{id}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->deleteClass($id);
+      if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $controller = new \App\Controllers\SupervisorController();
+        $controller->deleteClass($id);
+        redirect('/supervisor/classes');
+      } else {
+        redirect('/supervisor/classes');
+      }
       break;
 
     default:
