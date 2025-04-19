@@ -11,6 +11,11 @@ require_once BASE_PATH . '/src/helpers.php';
 // Start session
 \App\Session::start();
 
+// Generate CSRF token if not exists
+if (!\App\Session::get('csrf_token')) {
+  \App\Session::set('csrf_token', bin2hex(random_bytes(32)));
+}
+
 // Get the request URI
 $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
@@ -251,10 +256,23 @@ try {
       $controller->addClass();
       break;
 
-    case 'supervisor/classes/delete/{id}':
+    case (preg_match('/^supervisor\/classes\/delete\/(\d+)$/', $path, $matches) ? true : false):
       if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Verify CSRF token
+        if (!isset($_POST['csrf_token'])) {
+          \App\Session::set('error', 'CSRF token is missing');
+          redirect('/supervisor/classes');
+          exit;
+        }
+
+        if ($_POST['csrf_token'] !== \App\Session::get('csrf_token')) {
+          \App\Session::set('error', 'Invalid CSRF token');
+          redirect('/supervisor/classes');
+          exit;
+        }
+
         $controller = new \App\Controllers\SupervisorController();
-        $controller->deleteClass($id);
+        $controller->deleteClass($matches[1]);
         redirect('/supervisor/classes');
       } else {
         redirect('/supervisor/classes');

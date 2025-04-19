@@ -54,14 +54,15 @@
                 <tr>
                   <td class="fw-bold"><?php echo htmlspecialchars($class['id']); ?></td>
                   <td><?php echo htmlspecialchars($class['name']); ?></td>
-                  <!-- <td class="text-end">
+                  <td class="text-end">
                     <form action="/supervisor/classes/delete/<?php echo $class['id']; ?>" method="POST" class="d-inline">
+                      <input type="hidden" name="csrf_token" value="<?php echo \App\Session::get('csrf_token'); ?>">
                       <button type="submit" class="btn btn-danger btn-sm"
                         onclick="return confirm('Are you sure you want to delete this class? This will remove it from any subjects it is assigned to.')">
                         <i class="bi bi-trash"></i> Delete
                       </button>
                     </form>
-                  </td> -->
+                  </td>
                 </tr>
               <?php endforeach; ?>
             <?php endif; ?>
