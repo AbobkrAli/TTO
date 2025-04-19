@@ -64,12 +64,9 @@
 
       <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
       <p class="mt-3 text-muted">Don't have an account? Just enter your email and a password to auto-register.</p>
-      <p class="mt-5 mb-3 text-muted">&copy; <?php echo date('Y'); ?></p>
     </form>
 
     <!-- Debug link - remove in production -->
-    <p class="mt-3"><a href="/force_logout.php" class="text-danger">Force Logout</a> | <a href="/debug_login.php"
-        class="text-primary">Debug Tool</a></p>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
