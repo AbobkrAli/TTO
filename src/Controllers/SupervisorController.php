@@ -566,48 +566,65 @@ class SupervisorController extends Controller
   }
 
   /**
+   * Display all schedule requests
+   */
+  public function requests()
+  {
+    $requests = $this->requestModel->getAll();
+    $this->view('supervisor/requests/index', [
+      'requests' => $requests,
+      'title' => 'Schedule Requests'
+    ]);
+  }
+
+  /**
    * Approve a schedule request
    * 
-   * @param int $id Request ID
+   * @param int $requestId Request ID
    */
-  public function approveRequest($id)
+  public function approveRequest($requestId)
   {
-    // Get the request
-    $request = $this->requestModel->getById($id);
-
-    if (!$request) {
-      $_SESSION['error'] = 'Request not found';
-      redirect('/supervisor/departments');
-    }
-
-    // Check if request is pending
-    if ($request['status'] !== 'pending') {
-      $_SESSION['error'] = 'This request has already been processed';
-      redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
-    }
-
     try {
-      // Update request status
-      $this->requestModel->updateStatus($id, 'approved');
+      $request = $this->requestModel->getById($requestId);
+      if (!$request) {
+        throw new Exception('Request not found');
+      }
 
-      // Create subject from the request - mark as office hour and associate with request and teacher
-      $this->subjectModel->create(
-        $request['subject_code'] ?? 'OH-' . date('Ymd') . '-' . $id,
-        $request['subject_name'] ?? 'Office Hours (' . $request['teacher_name'] . ')',
+      // Check if class exists if class_id is provided
+      $class_id = null;
+      if (!empty($request['class_id'])) {
+        $class = $this->classModel->getById($request['class_id']);
+        if ($class) {
+          $class_id = $request['class_id'];
+        }
+      }
+
+      // Generate subject code and name for office hours if not provided
+      $subject_code = $request['subject_code'] ?? 'OH-' . date('Ymd') . '-' . $requestId;
+      $subject_name = $request['subject_name'] ?? 'Office Hours (' . $request['teacher_name'] . ')';
+
+      // Create subject from request
+      $subjectId = $this->subjectModel->create(
+        $subject_code,
+        $subject_name,
         $request['department_id'],
         $request['day'],
         $request['hour'],
-        true,  // isOfficeHour flag
-        $id,   // requestId
-        $request['teacher_id'] // teacherId - assign to requesting teacher
+        $class_id,  // Use validated class_id or null
+        true,  // Mark as office hour
+        $requestId,
+        $request['teacher_id']
       );
 
-      $_SESSION['success'] = 'Request approved and office hour created successfully';
-    } catch (\Exception $e) {
+      // Update request status
+      $this->requestModel->updateStatus($requestId, 'approved');
+
+      $_SESSION['success'] = 'Request approved successfully';
+    } catch (Exception $e) {
       $_SESSION['error'] = 'Error approving request: ' . $e->getMessage();
     }
 
-    redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
+    redirect('/supervisor/requests');
   }
 
   /**
