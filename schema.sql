@@ -10,16 +10,16 @@ CREATE DATABASE education_management
 
 USE education_management;
 
--- Departments table
-CREATE TABLE departments (
+-- Departments table (created first as it's referenced by other tables)
+CREATE TABLE IF NOT EXISTS departments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL UNIQUE COMMENT 'Department name (e.g. Computer Science)',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Users table
-CREATE TABLE users (
+-- Users table (depends on departments)
+CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
@@ -37,8 +37,16 @@ CREATE TABLE users (
   INDEX idx_user_department (department_id)
 ) ENGINE=InnoDB;
 
+-- Classes table (independent table)
+CREATE TABLE IF NOT EXISTS classes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- Subjects table (for the schedule)
-CREATE TABLE subjects (
+CREATE TABLE IF NOT EXISTS subjects (
   id INT AUTO_INCREMENT PRIMARY KEY,
   subject_code VARCHAR(50) NOT NULL,
   name VARCHAR(255) NOT NULL COMMENT 'Subject name',
@@ -63,7 +71,7 @@ CREATE TABLE subjects (
 ) ENGINE=InnoDB;
 
 -- Requests table (for schedule change requests)
-CREATE TABLE requests (
+CREATE TABLE IF NOT EXISTS requests (
   id INT AUTO_INCREMENT PRIMARY KEY,
   teacher_id INT NOT NULL COMMENT 'Teacher who sent the request',
   department_id INT NOT NULL COMMENT 'Department the request is for',
