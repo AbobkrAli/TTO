@@ -42,9 +42,12 @@ class Subject
               s.is_office_hour,
               s.request_id,
               s.teacher_id,
-              u.name as teacher_name
+              s.class_id,
+              u.name as teacher_name,
+              c.name as class_name
             FROM subjects s
             LEFT JOIN users u ON s.teacher_id = u.id
+            LEFT JOIN classes c ON s.class_id = c.id
             WHERE s.department_id = ? 
             ORDER BY s.day, s.hour";
     $stmt = $this->db->query($sql, [$departmentId]);

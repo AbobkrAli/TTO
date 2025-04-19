@@ -176,9 +176,7 @@ ob_start();
     <div class="tab-pane fade show active" id="subjects" role="tabpanel" aria-labelledby="subjects-tab">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4>Department Schedule</h4>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-          <i class="bi bi-plus-circle me-1"></i> Add Subject
-        </button>
+
       </div>
 
       <!-- Display messages -->
@@ -259,8 +257,8 @@ ob_start();
                 $currentDay = $selectedDay ?? 'Monday';
                 foreach ($timeSlots as $hour => $displayTime) {
                   echo '<tr>';
-                  echo '<td class="table-light fw-bold">' . $displayTime . '</td>';
-                  echo '<td style="height: 80px; position: relative;">';
+                  echo '<td class="table-light fw-bold" style="height: 120px;">' . $displayTime . '</td>';
+                  echo '<td style="height: 120px; position: relative;">';
 
                   if (isset($scheduledSubjects[$currentDay][$hour])) {
                     $subject = $scheduledSubjects[$currentDay][$hour];
@@ -280,6 +278,13 @@ ob_start();
                       echo '</div>';
                     }
 
+                    // Display class information
+                    if (isset($subject['class_name']) && !empty($subject['class_name'])) {
+                      echo '<div class="small mt-1">';
+                      echo '<i class="bi bi-building"></i> ' . htmlspecialchars($subject['class_name']);
+                      echo '</div>';
+                    }
+
                     if ($isOfficeHour) {
                       echo '<span class="office-hour-badge">Office Hour</span>';
                     }
@@ -291,10 +296,7 @@ ob_start();
                                   title="Delete ' . ($isOfficeHour ? 'Office Hour' : 'Subject') . '">';
                     echo '<i class="bi bi-trash"></i>';
                     echo '</button>';
-                    echo '<a href="/supervisor/subjects/edit/' . $subject['id'] . '" 
-                                class="btn btn-sm btn-link text-primary" 
-                                title="Edit ' . ($isOfficeHour ? 'Office Hour' : 'Subject') . '">';
-                    echo '<i class="bi bi-pencil"></i>';
+
                     echo '</a>';
                     echo '</div>';
                     echo '</div>';
@@ -501,16 +503,7 @@ ob_start();
                     <tr>
                       <td><?php echo htmlspecialchars($teacher['name']); ?></td>
                       <td><?php echo htmlspecialchars($teacher['email']); ?></td>
-                      <td>
-                        <a href="/supervisor/users/view/<?php echo $teacher['id']; ?>"
-                          class="btn btn-sm btn-view btn-action">
-                          <i class="bi bi-eye"></i> View
-                        </a>
-                        <a href="/supervisor/users/edit/<?php echo $teacher['id']; ?>"
-                          class="btn btn-sm btn-edit btn-action">
-                          <i class="bi bi-pencil"></i> Edit
-                        </a>
-                      </td>
+
                     </tr>
                   <?php endforeach; ?>
                 <?php else: ?>
@@ -542,7 +535,6 @@ ob_start();
                   <th>Day & Time</th>
                   <th>Requested On</th>
                   <th>Status</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>

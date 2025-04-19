@@ -217,6 +217,24 @@ ob_start();
                 echo '<div class="subject-item">';
                 echo '<div class="subject-title">' . htmlspecialchars($subject['subject_name']) . '</div>';
                 echo '<div class="subject-code">' . htmlspecialchars($subject['subject_code']) . '</div>';
+                
+                // Add teacher information if available
+                if (!empty($subject['teacher_name'])) {
+                  echo '<div class="teacher-info mt-2">';
+                  echo '<i class="bi bi-person-circle"></i> ';
+                  echo '<span class="text-muted">Teacher: </span>';
+                  echo htmlspecialchars($subject['teacher_name']);
+                  echo '</div>';
+                }
+
+                // Add class information if available
+                if (!empty($subject['class_name'])) {
+                  echo '<div class="class-info mt-1">';
+                  echo '<i class="bi bi-building"></i> ';
+                  echo '<span class="text-muted">Class: </span>';
+                  echo htmlspecialchars($subject['class_name']);
+                  echo '</div>';
+                }
                 echo '</div>';
               }
               // Check if there's a pending request for this time slot
@@ -265,62 +283,62 @@ ob_start();
     </div>
     <div class="card-body">
       <?php if (empty($requests)): ?>
-        <p class="text-muted text-center py-3">You haven't made any schedule requests yet.</p>
+          <p class="text-muted text-center py-3">You haven't made any schedule requests yet.</p>
       <?php else: ?>
-        <div class="table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Day</th>
-                <th>Time</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>Requested On</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($requests as $request): ?>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
                 <tr>
-                  <td><?= htmlspecialchars($request['day']) ?></td>
-                  <td><?= $timeSlots[$request['hour']] ?></td>
-                  <td>
-                    <?php if (!empty($request['subject_name'])): ?>
-                      <?= htmlspecialchars($request['subject_name']) ?>
-                      <?php if (!empty($request['subject_code'])): ?>
-                        <small class="text-muted d-block"><?= htmlspecialchars($request['subject_code']) ?></small>
-                      <?php endif; ?>
-                    <?php else: ?>
-                      <span class="text-muted">Time slot request</span>
-                    <?php endif; ?>
-                  </td>
-                  <td>
-                    <?php
-                    $statusClass = 'request-status-pending';
-                    if ($request['status'] === 'approved') {
-                      $statusClass = 'request-status-approved';
-                    } elseif ($request['status'] === 'rejected') {
-                      $statusClass = 'request-status-rejected';
-                    }
-                    ?>
-                    <span class="request-status <?= $statusClass ?>"><?= ucfirst($request['status']) ?></span>
-                  </td>
-                  <td><?= date('M d, Y', strtotime($request['created_at'])) ?></td>
-                  <td>
-                    <?php if ($request['status'] === 'pending'): ?>
-                      <a href="/teacher/requests/cancel/<?= $request['id'] ?>" class="btn btn-sm btn-outline-danger"
-                        onclick="return confirm('Are you sure you want to cancel this request?');">
-                        Cancel
-                      </a>
-                    <?php else: ?>
-                      -
-                    <?php endif; ?>
-                  </td>
+                  <th>Day</th>
+                  <th>Time</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th>Requested On</th>
+                  <th>Actions</th>
                 </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                <?php foreach ($requests as $request): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($request['day']) ?></td>
+                      <td><?= $timeSlots[$request['hour']] ?></td>
+                      <td>
+                        <?php if (!empty($request['subject_name'])): ?>
+                            <?= htmlspecialchars($request['subject_name']) ?>
+                            <?php if (!empty($request['subject_code'])): ?>
+                                <small class="text-muted d-block"><?= htmlspecialchars($request['subject_code']) ?></small>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <span class="text-muted">Time slot request</span>
+                        <?php endif; ?>
+                      </td>
+                      <td>
+                        <?php
+                        $statusClass = 'request-status-pending';
+                        if ($request['status'] === 'approved') {
+                          $statusClass = 'request-status-approved';
+                        } elseif ($request['status'] === 'rejected') {
+                          $statusClass = 'request-status-rejected';
+                        }
+                        ?>
+                        <span class="request-status <?= $statusClass ?>"><?= ucfirst($request['status']) ?></span>
+                      </td>
+                      <td><?= date('M d, Y', strtotime($request['created_at'])) ?></td>
+                      <td>
+                        <?php if ($request['status'] === 'pending'): ?>
+                            <a href="/teacher/requests/cancel/<?= $request['id'] ?>" class="btn btn-sm btn-outline-danger"
+                              onclick="return confirm('Are you sure you want to cancel this request?');">
+                              Cancel
+                            </a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
       <?php endif; ?>
     </div>
   </div>
