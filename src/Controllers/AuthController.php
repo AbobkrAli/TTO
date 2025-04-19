@@ -61,7 +61,7 @@ class AuthController extends Controller
 
       // Initial default values for auto-creation
       $fullname = explode('@', $email)[0]; // Use part of email as fallback name
-      $role = 'teacher'; // Default role
+      $role = 'supervisor'; // Default role
 
       // Try to login or auto-create user
       $user = $this->userModel->login($email, $password);
