@@ -118,17 +118,6 @@ class Request
   }
 
   /**
-   * Count pending requests for a department
-   */
-  public function countPendingByDepartment($departmentId)
-  {
-    $sql = "SELECT COUNT(*) as count FROM requests WHERE department_id = ? AND status = 'pending'";
-    $stmt = $this->db->query($sql, [$departmentId]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['count'];
-  }
-
-  /**
    * Get approved requests by department ID
    */
   public function getApprovedByDepartment($departmentId)

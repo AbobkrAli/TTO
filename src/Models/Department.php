@@ -99,10 +99,18 @@ class Department
 
   /**
    * Get all departments with counts for teachers and subjects
-   * This is an alias for backward compatibility
    */
-  // public function getAllWithCounts()
-  // {
-  //   return $this->getAllWithTeacherCount();
-  // }
+  public function getAllWithCounts()
+  {
+    $sql = "SELECT d.*, 
+                  COUNT(DISTINCT u.id) as teacher_count,
+                  COUNT(DISTINCT s.id) as subject_count
+            FROM departments d
+            LEFT JOIN users u ON d.id = u.department_id AND u.role = 'teacher'
+            LEFT JOIN subjects s ON d.id = s.department_id
+            GROUP BY d.id
+            ORDER BY d.name";
+    $stmt = $this->db->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
 }
