@@ -55,7 +55,22 @@ class TeacherController extends Controller
     }
 
     $subjectModel = new Subject();
-    return $subjectModel->getByDepartment($user['department_id']);
+    $subjects = $subjectModel->getByDepartment($user['department_id']);
+
+    // Flatten the nested array structure and filter for teacher's subjects
+    $flattenedSubjects = [];
+    foreach ($subjects as $day => $hours) {
+      foreach ($hours as $hour => $daySubjects) {
+        foreach ($daySubjects as $subject) {
+          // Only include subjects assigned to this teacher
+          if (isset($subject['teacher_id']) && $subject['teacher_id'] == $user['id']) {
+            $flattenedSubjects[] = $subject;
+          }
+        }
+      }
+    }
+
+    return $flattenedSubjects;
   }
 
   /**
@@ -89,9 +104,14 @@ class TeacherController extends Controller
       });
     }
 
+    // Get department information
+    $departmentModel = new \App\Models\Department();
+    $department = $departmentModel->getById($user['department_id']);
+
     $this->view('teacher/dashboard', [
       'user' => $user,
-      'schedule' => $groupedSchedule
+      'schedule' => $groupedSchedule,
+      'department' => $department
     ]);
   }
 

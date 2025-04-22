@@ -707,7 +707,12 @@ ob_start();
                     <tr>
                       <td><?php echo htmlspecialchars($teacher['name']); ?></td>
                       <td><?php echo htmlspecialchars($teacher['email']); ?></td>
-
+                      <td>
+                        <button onclick="removeTeacher(<?php echo $department['id']; ?>, <?php echo $teacher['id']; ?>)"
+                          class="btn btn-sm btn-danger">
+                          <i class="bi bi-person-x"></i> Remove
+                        </button>
+                      </td>
                     </tr>
                   <?php endforeach; ?>
                 <?php else: ?>
@@ -823,6 +828,57 @@ ob_start();
     </div>
   </div>
 </div>
+
+<script>
+  function removeTeacher(departmentId, teacherId) {
+    if (confirm('Are you sure you want to remove this teacher from the department?')) {
+      fetch(`/supervisor/departments/${departmentId}/teachers/remove/${teacherId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Show success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+            ${data.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          `;
+            document.querySelector('.tab-content').insertBefore(alertDiv, document.querySelector('.tab-content').firstChild);
+
+            // Remove the teacher's row from the table
+            const row = document.querySelector(`button[onclick="removeTeacher(${departmentId}, ${teacherId})"]`).closest('tr');
+            row.remove();
+          } else {
+            // Show error message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+            ${data.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          `;
+            document.querySelector('.tab-content').insertBefore(alertDiv, document.querySelector('.tab-content').firstChild);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          // Show error message
+          const alertDiv = document.createElement('div');
+          alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+          alertDiv.innerHTML = `
+          An error occurred while removing the teacher.
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+          document.querySelector('.tab-content').insertBefore(alertDiv, document.querySelector('.tab-content').firstChild);
+        });
+    }
+  }
+</script>
 
 <?php
 $content = ob_get_clean();

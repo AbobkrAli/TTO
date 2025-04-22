@@ -1,6 +1,6 @@
 <?php require_once __DIR__ . '/../../layout.php'; ?>
 
-<div class="container" style="width: 80%; margin-right: 100px;">
+<div class="" style=" width: calc(100% - 400px); margin-left: 350px;">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-building"></i> Classes Management</h2>
     <a href="/supervisor/classes/add" class="btn btn-primary">

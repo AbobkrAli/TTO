@@ -715,4 +715,54 @@ class SupervisorController extends Controller
     }
     redirect('/supervisor/classes');
   }
+
+  /**
+   * Remove a teacher from a department
+   * 
+   * @param int $departmentId Department ID
+   * @param int $teacherId Teacher ID
+   */
+  public function removeTeacher($departmentId, $teacherId)
+  {
+    try {
+      // Get the teacher to verify they belong to this department
+      $teacher = $this->userModel->getById($teacherId);
+
+      if (!$teacher) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Teacher not found']);
+        return;
+      }
+
+      if ($teacher['department_id'] != $departmentId) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'This teacher does not belong to this department']);
+        return;
+      }
+
+      // Remove the teacher from the department
+      if ($this->userModel->removeFromDepartment($teacherId)) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'Teacher removed from department successfully']);
+        return;
+      } else {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Failed to remove teacher from department']);
+        return;
+      }
+    } catch (Exception $e) {
+      header('Content-Type: application/json');
+      echo json_encode(['success' => false, 'message' => 'Error removing teacher: ' . $e->getMessage()]);
+      return;
+    }
+  }
+
+  /**
+   * Check if the request is an AJAX request
+   */
+  private function isAjaxRequest()
+  {
+    return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+  }
 }

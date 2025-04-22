@@ -40,6 +40,13 @@ ob_start();
     height: 80px;
     position: relative;
     border-bottom: 1px solid #f0f0f0;
+    padding: 0.5rem;
+  }
+
+  .time-slot-content {
+    display: flex;
+    gap: 0.5rem;
+    height: 100%;
   }
 
   .time-label {
@@ -55,8 +62,10 @@ ob_start();
     background-color: rgba(37, 117, 252, 0.1);
     border-left: 3px solid #2575fc;
     padding: 0.75rem;
+    border-radius: 6px;
     height: 100%;
     position: relative;
+    flex: 1;
   }
 
   .subject-title {
@@ -86,15 +95,26 @@ ob_start();
     justify-content: center;
     height: 100%;
     color: #6c757d;
-    background-color: transparent;
-    border: 1px dashed #dee2e6;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
     transition: all 0.2s;
+    text-decoration: none;
+    font-weight: 500;
   }
 
   .add-request-btn:hover {
-    background-color: #f8f9fa;
+    background-color: #e9ecef;
     color: #2575fc;
     border-color: #2575fc;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .add-request-btn i {
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
   }
 
   .my-requests-card {
@@ -250,9 +270,11 @@ ob_start();
 
               // Check if there's a subject at this time slot
               if (isset($scheduledSubjects[$selectedDay][$hour]) && is_array($scheduledSubjects[$selectedDay][$hour])) {
-                echo '<div class="d-flex gap-2">'; // Add flex container for side-by-side display
+                echo '<div class="time-slot-content">'; // Add flex container for side-by-side display
+            
+                // First show existing subjects
                 foreach ($scheduledSubjects[$selectedDay][$hour] as $subject) {
-                  echo '<div class="subject-item flex-grow-1">'; // Make each subject item grow to fill space
+                  echo '<div class="subject-item">'; // Make each subject item grow to fill space
                   echo '<div class="subject-title">' . htmlspecialchars($subject['subject_name']) . '</div>';
                   echo '<div class="subject-meta">';
 
@@ -281,60 +303,103 @@ ob_start();
                   echo '</div>'; // Close subject-meta
                   echo '</div>'; // Close subject-item
                 }
-                // Add request button even when there are subjects
-                echo '<button type="button" class="add-request-btn" 
-                              data-bs-toggle="modal" 
-                              data-bs-target="#requestModal" 
-                              data-day="' . $selectedDay . '" 
-                              data-hour="' . $hour . '"
-                              data-time="' . $displayTime . '">';
-                echo '<i class="bi bi-plus-circle me-2"></i> Request This Slot';
-                echo '</button>';
-                echo '</div>'; // Close flex container
-              }
-              // Check if there's a pending request for this time slot
-              elseif (isset($pendingRequests[$selectedDay][$hour])) {
-                $request = $pendingRequests[$selectedDay][$hour];
-                echo '<div class="subject-item" style="background-color: rgba(255, 193, 7, 0.1); border-left-color: #ffc107;">';
-                echo '<div class="subject-title">' .
-                  (empty($request['subject_name']) ? 'Time Slot Request' : htmlspecialchars($request['subject_name'])) .
-                  '</div>';
-                echo '<div class="subject-meta">';
 
-                // Subject Code
-                if (!empty($request['subject_code'])) {
-                  echo '<div class="subject-meta-item">';
-                  echo '<i class="bi bi-hash"></i> ';
-                  echo htmlspecialchars($request['subject_code']);
+                // Then show pending request if exists
+                if (isset($pendingRequests[$selectedDay][$hour])) {
+                  $request = $pendingRequests[$selectedDay][$hour][0];
+                  echo '<div class="subject-item" style="background-color: rgba(255, 193, 7, 0.1); border-left-color: #ffc107;">';
+                  echo '<div class="subject-title">' .
+                    (empty($request['subject_name']) ? 'Time Slot Request' : htmlspecialchars($request['subject_name'])) .
+                    '</div>';
+                  echo '<div class="subject-meta">';
+
+                  // Subject Code
+                  if (!empty($request['subject_code'])) {
+                    echo '<div class="subject-meta-item">';
+                    echo '<i class="bi bi-hash"></i> ';
+                    echo htmlspecialchars($request['subject_code']);
+                    echo '</div>';
+                  }
+
+                  // Class Info
+                  if (!empty($request['class_name'])) {
+                    echo '<div class="subject-meta-item">';
+                    echo '<i class="bi bi-building"></i> ';
+                    echo htmlspecialchars($request['class_name']);
+                    echo '</div>';
+                  }
+
+                  echo '</div>'; // Close subject-meta
+                  echo '<span class="request-badge">Pending</span>';
+                  if (isset($request['id'])) {
+                    echo '<a href="/teacher/requests/cancel/' . $request['id'] . '" 
+                             class="btn btn-sm btn-outline-danger position-absolute bottom-0 end-0 m-2"
+                             onclick="return confirm(\'Are you sure you want to cancel this request?\');">
+                             Cancel Request</a>';
+                  }
                   echo '</div>';
                 }
 
-                // Class Info
-                if (!empty($request['class_name'])) {
-                  echo '<div class="subject-meta-item">';
-                  echo '<i class="bi bi-building"></i> ';
-                  echo htmlspecialchars($request['class_name']);
-                  echo '</div>';
+                // Add request button if no pending request
+                if (!isset($pendingRequests[$selectedDay][$hour])) {
+                  echo '<button type="button" class="add-request-btn" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#requestModal" 
+                                data-day="' . $selectedDay . '" 
+                                data-hour="' . $hour . '"
+                                data-time="' . $displayTime . '">';
+                  echo '<i class="bi bi-plus-circle"></i> Request Slot';
+                  echo '</button>';
                 }
-
-                echo '</div>'; // Close subject-meta
-                echo '<span class="request-badge">Pending</span>';
-                echo '<a href="/teacher/requests/cancel/' . $request['id'] . '" 
-                         class="btn btn-sm btn-outline-danger position-absolute bottom-0 end-0 m-2"
-                         onclick="return confirm(\'Are you sure you want to cancel this request?\');">
-                         Cancel Request</a>';
-                echo '</div>';
+                echo '</div>'; // Close time-slot-content
               }
-              // Empty slot - show request button
+              // Empty slot - show request button or pending request
               else {
-                echo '<button type="button" class="add-request-btn w-100 h-100" 
-                              data-bs-toggle="modal" 
-                              data-bs-target="#requestModal" 
-                              data-day="' . $selectedDay . '" 
-                              data-hour="' . $hour . '"
-                              data-time="' . $displayTime . '">';
-                echo '<i class="bi bi-plus-circle me-2"></i> Request This Slot';
-                echo '</button>';
+                echo '<div class="time-slot-content">';
+                if (isset($pendingRequests[$selectedDay][$hour])) {
+                  $request = $pendingRequests[$selectedDay][$hour][0];
+                  echo '<div class="subject-item" style="background-color: rgba(255, 193, 7, 0.1); border-left-color: #ffc107;">';
+                  echo '<div class="subject-title">' .
+                    (empty($request['subject_name']) ? 'Time Slot Request' : htmlspecialchars($request['subject_name'])) .
+                    '</div>';
+                  echo '<div class="subject-meta">';
+
+                  // Subject Code
+                  if (!empty($request['subject_code'])) {
+                    echo '<div class="subject-meta-item">';
+                    echo '<i class="bi bi-hash"></i> ';
+                    echo htmlspecialchars($request['subject_code']);
+                    echo '</div>';
+                  }
+
+                  // Class Info
+                  if (!empty($request['class_name'])) {
+                    echo '<div class="subject-meta-item">';
+                    echo '<i class="bi bi-building"></i> ';
+                    echo htmlspecialchars($request['class_name']);
+                    echo '</div>';
+                  }
+
+                  echo '</div>'; // Close subject-meta
+                  echo '<span class="request-badge">Pending</span>';
+                  if (isset($request['id'])) {
+                    echo '<a href="/teacher/requests/cancel/' . $request['id'] . '" 
+                             class="btn btn-sm btn-outline-danger position-absolute bottom-0 end-0 m-2"
+                             onclick="return confirm(\'Are you sure you want to cancel this request?\');">
+                             Cancel Request</a>';
+                  }
+                  echo '</div>';
+                } else {
+                  echo '<button type="button" class="add-request-btn w-100" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#requestModal" 
+                                data-day="' . $selectedDay . '" 
+                                data-hour="' . $hour . '"
+                                data-time="' . $displayTime . '">';
+                  echo '<i class="bi bi-plus-circle"></i> Request This Slot';
+                  echo '</button>';
+                }
+                echo '</div>';
               }
 
               echo '</td>';
@@ -369,7 +434,11 @@ ob_start();
               </tr>
             </thead>
             <tbody>
-              <?php foreach ($requests as $request): ?>
+              <?php
+              // Get only the last 10 requests
+              $recentRequests = array_slice($requests, 0, 10);
+              foreach ($recentRequests as $request):
+                ?>
                 <tr>
                   <td><?= htmlspecialchars($request['day']) ?></td>
                   <td><?= $timeSlots[$request['hour']] ?></td>
@@ -409,6 +478,7 @@ ob_start();
               <?php endforeach; ?>
             </tbody>
           </table>
+
         </div>
       <?php endif; ?>
     </div>

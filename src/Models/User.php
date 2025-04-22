@@ -154,4 +154,22 @@ class User
       return false;
     }
   }
+
+  /**
+   * Remove a teacher from a department
+   * 
+   * @param int $userId User ID
+   * @return bool Success or failure
+   */
+  public function removeFromDepartment($userId)
+  {
+    try {
+      $sql = "UPDATE users SET department_id = NULL WHERE id = ? AND role = 'teacher'";
+      $result = $this->db->query($sql, [$userId]);
+      return $result !== false;
+    } catch (\Exception $e) {
+      $this->log("Error removing teacher from department: " . $e->getMessage());
+      return false;
+    }
+  }
 }
