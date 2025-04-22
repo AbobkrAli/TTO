@@ -47,68 +47,68 @@ class SupervisorController extends Controller
     ]);
   }
 
-  /**
-   * View user details
-   * 
-   * @param int $id User ID
-   */
-  public function viewUser($id)
-  {
-    $user = $this->userModel->getById($id);
-    if (!$user) {
-      $_SESSION['error'] = 'User not found';
-      redirect('/supervisor/users');
-    }
+  // /**
+  //  * View user details
+  //  * 
+  //  * @param int $id User ID
+  //  */
+  // public function viewUser($id)
+  // {
+  //   $user = $this->userModel->getById($id);
+  //   if (!$user) {
+  //     $_SESSION['error'] = 'User not found';
+  //     redirect('/supervisor/users');
+  //   }
 
-    // Get department information if user is assigned to one
-    $department = null;
-    if (!empty($user['department_id'])) {
-      $department = $this->departmentModel->getById($user['department_id']);
-    }
+  //   // Get department information if user is assigned to one
+  //   $department = null;
+  //   if (!empty($user['department_id'])) {
+  //     $department = $this->departmentModel->getById($user['department_id']);
+  //   }
 
-    require_once dirname(__DIR__) . '/Views/supervisor/users/view.php';
-  }
+  //   require_once dirname(__DIR__) . '/Views/supervisor/users/view.php';
+  // }
 
-  /**
-   * Edit user
-   * 
-   * @param int $id User ID
-   */
-  public function editUser($id)
-  {
-    $user = $this->userModel->getById($id);
-    if (!$user) {
-      $_SESSION['error'] = 'User not found';
-      redirect('/supervisor/users');
-    }
+  // /**
+  //  * Edit user
+  //  * 
+  //  * @param int $id User ID
+  //  */
+  // public function editUser($id)
+  // {
+  //   $user = $this->userModel->getById($id);
+  //   if (!$user) {
+  //     $_SESSION['error'] = 'User not found';
+  //     redirect('/supervisor/users');
+  //   }
 
-    $departments = $this->departmentModel->getAll();
+  //   $departments = $this->departmentModel->getAll();
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $fullname = $_POST['fullname'] ?? '';
-      $email = $_POST['email'] ?? '';
-      $role = $_POST['role'] ?? '';
-      $department_id = !empty($_POST['department_id']) ? $_POST['department_id'] : null;
+  //   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  //     $fullname = $_POST['fullname'] ?? '';
+  //     $email = $_POST['email'] ?? '';
+  //     $role = $_POST['role'] ?? '';
+  //     $department_id = !empty($_POST['department_id']) ? $_POST['department_id'] : null;
 
-      if (empty($fullname) || empty($email) || empty($role)) {
-        $error = "Name, email and role are required";
-        require_once dirname(__DIR__) . '/Views/supervisor/users/edit.php';
-        return;
-      }
+  //     if (empty($fullname) || empty($email) || empty($role)) {
+  //       $error = "Name, email and role are required";
+  //       require_once dirname(__DIR__) . '/Views/supervisor/users/edit.php';
+  //       return;
+  //     }
 
-      if ($this->userModel->updateUser($id, $fullname, $email, $role, $department_id)) {
-        $_SESSION['success'] = 'User updated successfully';
-        redirect('/supervisor/users');
-      } else {
-        $error = "Failed to update user";
-        require_once dirname(__DIR__) . '/Views/supervisor/users/edit.php';
-      }
-    } else {
-      require_once dirname(__DIR__) . '/Views/supervisor/users/edit.php';
-    }
-  }
+  //     if ($this->userModel->updateUser($id, $fullname, $email, $role, $department_id)) {
+  //       $_SESSION['success'] = 'User updated successfully';
+  //       redirect('/supervisor/users');
+  //     } else {
+  //       $error = "Failed to update user";
+  //       require_once dirname(__DIR__) . '/Views/supervisor/users/edit.php';
+  //     }
+  //   } else {
+  //     require_once dirname(__DIR__) . '/Views/supervisor/users/edit.php';
+  //   }
+  // }
 
-  /**
+  /** 
    * Display departments management page
    */
   public function departments()
@@ -148,11 +148,11 @@ class SupervisorController extends Controller
   /**
    * Create a new department
    */
-  public function createDepartment()
-  {
-    // Redirect to addDepartment method for consistency
-    $this->addDepartment();
-  }
+  // public function createDepartment()
+  // {
+  //   // Redirect to addDepartment method for consistency
+  //   $this->addDepartment();
+  // }
 
   /**
    * Edit department
@@ -373,66 +373,66 @@ class SupervisorController extends Controller
     redirect('/supervisor/departments/view/' . $departmentId . '?day=' . urlencode($day));
   }
 
-  /**
-   * Edit subject
-   * 
-   * @param int $id Subject ID
-   */
-  public function editSubject($id)
-  {
-    $subject = $this->subjectModel->getById($id);
-    if (!$subject) {
-      $_SESSION['error'] = 'Subject not found';
-      redirect('/supervisor/departments');
-    }
+  // /**
+  //  * Edit subject
+  //  * 
+  //  * @param int $id Subject ID
+  //  */
+  // public function editSubject($id)
+  // {
+  //   $subject = $this->subjectModel->getById($id);
+  //   if (!$subject) {
+  //     $_SESSION['error'] = 'Subject not found';
+  //     redirect('/supervisor/departments');
+  //   }
 
-    $departments = $this->departmentModel->getAll();
+  //   $departments = $this->departmentModel->getAll();
 
-    // Get teachers for the current department
-    $teachers = $this->userModel->getByDepartmentAndRole($subject['department_id'], 'teacher');
+  //   // Get teachers for the current department
+  //   $teachers = $this->userModel->getByDepartmentAndRole($subject['department_id'], 'teacher');
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $subjectCode = trim($_POST['subject_code'] ?? '');
-      $subjectName = trim($_POST['subject_name'] ?? '');
-      $departmentId = (int) ($_POST['department_id'] ?? $subject['department_id']);
-      $day = trim($_POST['day'] ?? '');
-      $hour = (int) ($_POST['hour'] ?? 0);
-      $teacherId = !empty($_POST['teacher_id']) ? (int) $_POST['teacher_id'] : null;
+  //   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  //     $subjectCode = trim($_POST['subject_code'] ?? '');
+  //     $subjectName = trim($_POST['subject_name'] ?? '');
+  //     $departmentId = (int) ($_POST['department_id'] ?? $subject['department_id']);
+  //     $day = trim($_POST['day'] ?? '');
+  //     $hour = (int) ($_POST['hour'] ?? 0);
+  //     $teacherId = !empty($_POST['teacher_id']) ? (int) $_POST['teacher_id'] : null;
 
-      if (empty($subjectCode) || empty($subjectName) || empty($departmentId) || empty($day) || $hour < 9 || $hour > 17) {
-        $_SESSION['error'] = "All fields are required and hour must be between 9 and 17";
-        redirect('/supervisor/subjects/edit/' . $id);
-      }
+  //     if (empty($subjectCode) || empty($subjectName) || empty($departmentId) || empty($day) || $hour < 9 || $hour > 17) {
+  //       $_SESSION['error'] = "All fields are required and hour must be between 9 and 17";
+  //       redirect('/supervisor/subjects/edit/' . $id);
+  //     }
 
-      // Validate teacher belongs to this department if specified
-      if ($teacherId) {
-        $teacher = $this->userModel->getById($teacherId);
-        if (!$teacher || $teacher['department_id'] != $departmentId || $teacher['role'] !== 'teacher') {
-          $_SESSION['error'] = 'The selected teacher is not valid for this department';
-          redirect('/supervisor/subjects/edit/' . $id);
-        }
-      }
+  //     // Validate teacher belongs to this department if specified
+  //     if ($teacherId) {
+  //       $teacher = $this->userModel->getById($teacherId);
+  //       if (!$teacher || $teacher['department_id'] != $departmentId || $teacher['role'] !== 'teacher') {
+  //         $_SESSION['error'] = 'The selected teacher is not valid for this department';
+  //         redirect('/supervisor/subjects/edit/' . $id);
+  //       }
+  //     }
 
-      if ($this->subjectModel->update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId)) {
-        $_SESSION['success'] = 'Subject updated successfully';
-        redirect('/supervisor/departments/view/' . $departmentId . '?day=' . $day);
-      } else {
-        $_SESSION['error'] = 'Failed to update subject';
-        redirect('/supervisor/subjects/edit/' . $id);
-      }
-    }
+  //     if ($this->subjectModel->update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId)) {
+  //       $_SESSION['success'] = 'Subject updated successfully';
+  //       redirect('/supervisor/departments/view/' . $departmentId . '?day=' . $day);
+  //     } else {
+  //       $_SESSION['error'] = 'Failed to update subject';
+  //       redirect('/supervisor/subjects/edit/' . $id);
+  //     }
+  //   }
 
-    // Get the day options
-    $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+  //   // Get the day options
+  //   $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
-    // Get the hour options
-    $hours = [];
-    for ($i = 9; $i <= 17; $i++) {
-      $hours[$i] = sprintf('%02d:00', $i);
-    }
+  //   // Get the hour options
+  //   $hours = [];
+  //   for ($i = 9; $i <= 17; $i++) {
+  //     $hours[$i] = sprintf('%02d:00', $i);
+  //   }
 
-    require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/edit.php';
-  }
+  //   require_once dirname(__DIR__) . '/Views/supervisor/departments/subjects/edit.php';
+  // }
 
   /**
    * Delete a subject

@@ -75,34 +75,34 @@ class Department
   /**
    * Count teachers in department
    */
-  public function countTeachers($departmentId)
-  {
-    $sql = "SELECT COUNT(*) as count FROM users WHERE department_id = ? AND role = 'teacher'";
-    $stmt = $this->db->query($sql, [$departmentId]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['count'];
-  }
+  // public function countTeachers($departmentId)
+  // {
+  //   $sql = "SELECT COUNT(*) as count FROM users WHERE department_id = ? AND role = 'teacher'";
+  //   $stmt = $this->db->query($sql, [$departmentId]);
+  //   $result = $stmt->fetch(PDO::FETCH_ASSOC);
+  //   return $result['count'];
+  // }
 
   /**
    * Get departments with teacher counts
    */
-  public function getAllWithTeacherCount()
-  {
-    $sql = "SELECT d.*, COUNT(u.id) as teacher_count 
-            FROM departments d
-            LEFT JOIN users u ON d.id = u.department_id AND u.role = 'teacher'
-            GROUP BY d.id
-            ORDER BY d.name";
-    $stmt = $this->db->query($sql);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-  }
+  // public function getAllWithTeacherCount()
+  // {
+  //   $sql = "SELECT d.*, COUNT(u.id) as teacher_count 
+  //           FROM departments d
+  //           LEFT JOIN users u ON d.id = u.department_id AND u.role = 'teacher'
+  //           GROUP BY d.id
+  //           ORDER BY d.name";
+  //   $stmt = $this->db->query($sql);
+  //   return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  // }
 
   /**
    * Get all departments with counts for teachers and subjects
    * This is an alias for backward compatibility
    */
-  public function getAllWithCounts()
-  {
-    return $this->getAllWithTeacherCount();
-  }
+  // public function getAllWithCounts()
+  // {
+  //   return $this->getAllWithTeacherCount();
+  // }
 }

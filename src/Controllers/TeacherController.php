@@ -11,12 +11,14 @@ class TeacherController extends Controller
   private $userModel;
   private $subjectModel;
   private $requestModel;
+  private $classModel;
 
   public function __construct()
   {
     $this->userModel = new User();
     $this->subjectModel = new Subject();
     $this->requestModel = new \App\Models\Request();
+    $this->classModel = new \App\Models\ClassModel();
 
     // Check if user is logged in and is a teacher
     if (!Session::isLoggedIn()) {
@@ -113,12 +115,16 @@ class TeacherController extends Controller
     // Get pending requests made by this teacher
     $requests = $this->requestModel->getByTeacher($user['id']);
 
+    // Get all classes
+    $classes = $this->classModel->getAll();
+
     // Load view
     $this->view('teacher/schedule', [
       'user' => $user,
       'subjects' => $subjects,
       'requests' => $requests,
-      'selectedDay' => $selectedDay
+      'selectedDay' => $selectedDay,
+      'classes' => $classes
     ]);
   }
 

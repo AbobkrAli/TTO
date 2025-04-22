@@ -217,7 +217,7 @@ ob_start();
                 echo '<div class="subject-item">';
                 echo '<div class="subject-title">' . htmlspecialchars($subject['subject_name']) . '</div>';
                 echo '<div class="subject-code">' . htmlspecialchars($subject['subject_code']) . '</div>';
-                
+
                 // Add teacher information if available
                 if (!empty($subject['teacher_name'])) {
                   echo '<div class="teacher-info mt-2">';
@@ -283,62 +283,62 @@ ob_start();
     </div>
     <div class="card-body">
       <?php if (empty($requests)): ?>
-          <p class="text-muted text-center py-3">You haven't made any schedule requests yet.</p>
+        <p class="text-muted text-center py-3">You haven't made any schedule requests yet.</p>
       <?php else: ?>
-          <div class="table-responsive">
-            <table class="table">
-              <thead>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Requested On</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($requests as $request): ?>
                 <tr>
-                  <th>Day</th>
-                  <th>Time</th>
-                  <th>Subject</th>
-                  <th>Status</th>
-                  <th>Requested On</th>
-                  <th>Actions</th>
+                  <td><?= htmlspecialchars($request['day']) ?></td>
+                  <td><?= $timeSlots[$request['hour']] ?></td>
+                  <td>
+                    <?php if (!empty($request['subject_name'])): ?>
+                      <?= htmlspecialchars($request['subject_name']) ?>
+                      <?php if (!empty($request['subject_code'])): ?>
+                        <small class="text-muted d-block"><?= htmlspecialchars($request['subject_code']) ?></small>
+                      <?php endif; ?>
+                    <?php else: ?>
+                      <span class="text-muted">Time slot request</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php
+                    $statusClass = 'request-status-pending';
+                    if ($request['status'] === 'approved') {
+                      $statusClass = 'request-status-approved';
+                    } elseif ($request['status'] === 'rejected') {
+                      $statusClass = 'request-status-rejected';
+                    }
+                    ?>
+                    <span class="request-status <?= $statusClass ?>"><?= ucfirst($request['status']) ?></span>
+                  </td>
+                  <td><?= date('M d, Y', strtotime($request['created_at'])) ?></td>
+                  <td>
+                    <?php if ($request['status'] === 'pending'): ?>
+                      <a href="/teacher/requests/cancel/<?= $request['id'] ?>" class="btn btn-sm btn-outline-danger"
+                        onclick="return confirm('Are you sure you want to cancel this request?');">
+                        Cancel
+                      </a>
+                    <?php else: ?>
+                      -
+                    <?php endif; ?>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($requests as $request): ?>
-                    <tr>
-                      <td><?= htmlspecialchars($request['day']) ?></td>
-                      <td><?= $timeSlots[$request['hour']] ?></td>
-                      <td>
-                        <?php if (!empty($request['subject_name'])): ?>
-                            <?= htmlspecialchars($request['subject_name']) ?>
-                            <?php if (!empty($request['subject_code'])): ?>
-                                <small class="text-muted d-block"><?= htmlspecialchars($request['subject_code']) ?></small>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <span class="text-muted">Time slot request</span>
-                        <?php endif; ?>
-                      </td>
-                      <td>
-                        <?php
-                        $statusClass = 'request-status-pending';
-                        if ($request['status'] === 'approved') {
-                          $statusClass = 'request-status-approved';
-                        } elseif ($request['status'] === 'rejected') {
-                          $statusClass = 'request-status-rejected';
-                        }
-                        ?>
-                        <span class="request-status <?= $statusClass ?>"><?= ucfirst($request['status']) ?></span>
-                      </td>
-                      <td><?= date('M d, Y', strtotime($request['created_at'])) ?></td>
-                      <td>
-                        <?php if ($request['status'] === 'pending'): ?>
-                            <a href="/teacher/requests/cancel/<?= $request['id'] ?>" class="btn btn-sm btn-outline-danger"
-                              onclick="return confirm('Are you sure you want to cancel this request?');">
-                              Cancel
-                            </a>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
-                      </td>
-                    </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
       <?php endif; ?>
     </div>
   </div>
@@ -363,15 +363,26 @@ ob_start();
           </div>
 
           <div class="mb-3">
-            <label for="subject_code" class="form-label">Subject Code (Optional)</label>
-            <input type="text" class="form-control" id="subject_code" name="subject_code">
-            <div class="form-text">If you're requesting a specific subject, enter its code.</div>
+            <label for="subject_code" class="form-label">Subject Code</label>
+            <input type="text" class="form-control" id="subject_code" name="subject_code" required>
+            <div class="form-text">Enter the subject code for your request.</div>
           </div>
 
           <div class="mb-3">
-            <label for="subject_name" class="form-label">Subject Name (Optional)</label>
-            <input type="text" class="form-control" id="subject_name" name="subject_name">
-            <div class="form-text">If you're requesting a specific subject, enter its name.</div>
+            <label for="subject_name" class="form-label">Subject Name</label>
+            <input type="text" class="form-control" id="subject_name" name="subject_name" required>
+            <div class="form-text">Enter the subject name for your request.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="class_id" class="form-label">Class</label>
+            <select class="form-select" id="class_id" name="class_id" required>
+              <option value="">-- Select Class --</option>
+              <?php foreach ($classes as $class): ?>
+                <option value="<?= $class['id'] ?>"><?= htmlspecialchars($class['name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+            <div class="form-text">Select the class for this subject.</div>
           </div>
 
           <div class="d-grid">

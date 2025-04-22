@@ -116,25 +116,25 @@ class Subject
     }
   }
 
-  /**
-   * Update an existing subject
-   */
-  public function update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId = null)
-  {
-    $sql = "UPDATE subjects 
-            SET subject_code = ?, name = ?, department_id = ?, day = ?, hour = ?, teacher_id = ? 
-            WHERE id = ?";
-    return $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId, $id]);
-  }
+  // /**
+  //  * Update an existing subject
+  //  */
+  // public function update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId = null)
+  // {
+  //   $sql = "UPDATE subjects 
+  //           SET subject_code = ?, name = ?, department_id = ?, day = ?, hour = ?, teacher_id = ? 
+  //           WHERE id = ?";
+  //   return $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId, $id]);
+  // }
 
   /**
    * Update a subject's teacher
    */
-  public function updateTeacher($id, $teacherId)
-  {
-    $sql = "UPDATE subjects SET teacher_id = ? WHERE id = ?";
-    return $this->db->query($sql, [$teacherId, $id]);
-  }
+  // public function updateTeacher($id, $teacherId)
+  // {
+  //   $sql = "UPDATE subjects SET teacher_id = ? WHERE id = ?";
+  //   return $this->db->query($sql, [$teacherId, $id]);
+  // }
 
   /**
    * Delete a subject
@@ -148,13 +148,13 @@ class Subject
   /**
    * Count subjects in department
    */
-  public function countByDepartment($departmentId)
-  {
-    $sql = "SELECT COUNT(*) as count FROM subjects WHERE department_id = ?";
-    $stmt = $this->db->query($sql, [$departmentId]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['count'];
-  }
+  // public function countByDepartment($departmentId)
+  // {
+  //   $sql = "SELECT COUNT(*) as count FROM subjects WHERE department_id = ?";
+  //   $stmt = $this->db->query($sql, [$departmentId]);
+  //   $result = $stmt->fetch(PDO::FETCH_ASSOC);
+  //   return $result['count'];
+  // }
 
   /**
    * Format time to 12-hour format

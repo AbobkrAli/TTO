@@ -26,6 +26,82 @@ ob_start();
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
+  .time-slot {
+    position: relative;
+    min-height: 120px;
+    padding: 1rem;
+    transition: background-color 0.3s;
+  }
+
+  .time-slot:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+  .subject-info {
+    background-color: rgba(37, 117, 252, 0.05);
+    border-left: 4px solid #2575fc;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+
+  .subject-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+  }
+
+  .subject-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .subject-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+  }
+
+  .subject-meta-item i {
+    color: #2575fc;
+  }
+
+  .empty-slot {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .time-label {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .day-btn {
+    border-radius: 20px;
+    padding: 0.5rem 1.5rem;
+    margin: 0 0.25rem;
+    transition: all 0.3s;
+  }
+
+  .day-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .day-btn.active {
+    background-color: #2575fc;
+    color: white;
+    box-shadow: 0 4px 6px rgba(37, 117, 252, 0.2);
+  }
+
   .dept-header {
     background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
     color: white;
@@ -101,8 +177,9 @@ ob_start();
     border-radius: 4px;
     font-size: 0.7rem;
     font-weight: 500;
-    background-color: #9c27b0;
+    background-color: #2575fc;
     color: white;
+    margin-left: 0.5rem;
   }
 </style>
 
@@ -257,49 +334,49 @@ ob_start();
                 $currentDay = $selectedDay ?? 'Monday';
                 foreach ($timeSlots as $hour => $displayTime) {
                   echo '<tr>';
-                  echo '<td class="table-light fw-bold" style="height: 120px;">' . $displayTime . '</td>';
-                  echo '<td style="height: 120px; position: relative;">';
+                  echo '<td class="time-label">' . $displayTime . '</td>';
+                  echo '<td class="time-slot">';
 
                   if (isset($scheduledSubjects[$currentDay][$hour])) {
                     $subject = $scheduledSubjects[$currentDay][$hour];
                     $isOfficeHour = isset($subject['is_office_hour']) && $subject['is_office_hour'] == 1;
 
-                    echo '<div class="position-absolute top-0 start-0 end-0 bottom-0 p-2 ' . ($isOfficeHour ? 'office-hour-item' : '') . '" 
-                               style="background-color: ' . ($isOfficeHour ? 'rgba(156, 39, 176, 0.1)' : 'rgba(37, 117, 252, 0.1)') . '; 
-                               border-left: 3px solid ' . ($isOfficeHour ? '#9c27b0' : '#2575fc') . ';">';
+                    echo '<div class="subject-info">';
+                    echo '<div class="subject-title">' . htmlspecialchars($subject['subject_name']) . '</div>';
+                    echo '<div class="subject-meta">';
 
-                    echo '<div class="fw-bold">' . htmlspecialchars($subject['subject_name']) . '</div>';
-                    echo '<div class="small text-muted">' . htmlspecialchars($subject['subject_code']) . '</div>';
+                    // Subject Code
+                    echo '<div class="subject-meta-item">';
+                    echo '<i class="bi bi-hash"></i>';
+                    echo htmlspecialchars($subject['subject_code']);
+                    echo '</div>';
 
-                    // Display teacher information
+                    // Teacher Info
                     if (isset($subject['teacher_name']) && !empty($subject['teacher_name'])) {
-                      echo '<div class="small mt-1">';
-                      echo '<i class="bi bi-person-circle"></i> ' . htmlspecialchars($subject['teacher_name']);
+                      echo '<div class="subject-meta-item">';
+                      echo '<i class="bi bi-person-circle"></i>';
+                      echo htmlspecialchars($subject['teacher_name']);
                       echo '</div>';
                     }
 
-                    // Display class information
+                    // Class Info
                     if (isset($subject['class_name']) && !empty($subject['class_name'])) {
-                      echo '<div class="small mt-1">';
-                      echo '<i class="bi bi-building"></i> ' . htmlspecialchars($subject['class_name']);
+                      echo '<div class="subject-meta-item">';
+                      echo '<i class="bi bi-building"></i>';
+                      echo htmlspecialchars($subject['class_name']);
                       echo '</div>';
                     }
 
-                    if ($isOfficeHour) {
-                      echo '<span class="office-hour-badge">Office Hour</span>';
+                    // Place Info
+                    if (isset($subject['place']) && !empty($subject['place'])) {
+                      echo '<div class="subject-meta-item">';
+                      echo '<i class="bi bi-geo-alt"></i>';
+                      echo htmlspecialchars($subject['place']);
+                      echo '</div>';
                     }
 
-                    echo '<div class="position-absolute top-0 end-0 p-1">';
-                    echo '<button class="btn btn-sm btn-link text-danger delete-subject" 
-                                  data-subject-id="' . $subject['id'] . '" 
-                                  data-subject-name="' . htmlspecialchars($subject['subject_name']) . '"
-                                  title="Delete ' . ($isOfficeHour ? 'Office Hour' : 'Subject') . '">';
-                    echo '<i class="bi bi-trash"></i>';
-                    echo '</button>';
-
-                    echo '</a>';
-                    echo '</div>';
-                    echo '</div>';
+                    echo '</div>'; // Close subject-meta
+                    echo '</div>'; // Close subject-info
                   }
                   // Check if there are pending requests for this time slot
                   elseif (isset($pendingRequests[$currentDay][$hour]) && !empty($pendingRequests[$currentDay][$hour])) {
@@ -340,13 +417,7 @@ ob_start();
                       echo '</div>';
                     }
                   } else {
-                    echo '<button class="btn btn-light btn-sm position-absolute top-50 start-50 translate-middle add-subject-btn" 
-                                  data-bs-toggle="modal" 
-                                  data-bs-target="#addSubjectModal" 
-                                  data-day="' . $currentDay . '" 
-                                  data-hour="' . $hour . '">';
-                    echo '<i class="bi bi-plus"></i> Add Subject';
-                    echo '</button>';
+                    echo '<div class="empty-slot">No subject scheduled</div>';
                   }
                   echo '</td>';
                   echo '</tr>';
