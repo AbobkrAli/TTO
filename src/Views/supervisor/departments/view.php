@@ -31,6 +31,9 @@ ob_start();
     min-height: 120px;
     padding: 1rem;
     transition: background-color 0.3s;
+    min-width: 200px;
+    padding: 10px;
+    border: 1px solid #e9ecef;
   }
 
   .time-slot:hover {
@@ -38,36 +41,45 @@ ob_start();
   }
 
   .subject-info {
-    background-color: rgba(37, 117, 252, 0.05);
-    border-left: 4px solid #2575fc;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-left: 4px solid #0d6efd;
+  }
+
+  .subject-info:last-child {
+    margin-bottom: 0;
   }
 
   .subject-title {
     font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 0.25rem;
+    color: #212529;
+    margin-bottom: 5px;
   }
 
   .subject-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
-    margin-top: 0.5rem;
-  }
-
-  .subject-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #6c757d;
+    gap: 10px;
     font-size: 0.875rem;
   }
 
+  .subject-meta-item {
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
   .subject-meta-item i {
-    color: #2575fc;
+    font-size: 1rem;
+  }
+
+  /* Add a subtle separator between multiple subjects */
+  .subject-info+.subject-info {
+    border-top: 1px solid #e9ecef;
+    padding-top: 10px;
   }
 
   .empty-slot {
@@ -313,10 +325,18 @@ ob_start();
 
                 // Group subjects by day and hour
                 $scheduledSubjects = [];
-                foreach ($subjects as $subject) {
-                  $day = $subject['day'];
-                  $hour = (int) $subject['hour'];
-                  $scheduledSubjects[$day][$hour] = $subject;
+                if (isset($subjects) && is_array($subjects)) {
+                  foreach ($subjects as $day => $daySubjects) {
+                    foreach ($daySubjects as $hour => $hourSubjects) {
+                      if (!isset($scheduledSubjects[$day])) {
+                        $scheduledSubjects[$day] = [];
+                      }
+                      if (!isset($scheduledSubjects[$day][$hour])) {
+                        $scheduledSubjects[$day][$hour] = [];
+                      }
+                      $scheduledSubjects[$day][$hour] = $hourSubjects;
+                    }
+                  }
                 }
 
                 // Group requests by day and hour
@@ -324,8 +344,19 @@ ob_start();
                 if (isset($requests) && is_array($requests)) {
                   foreach ($requests as $request) {
                     if ($request['status'] === 'pending') {
+                      // Check if the required keys exist
+                      if (!isset($request['day']) || !isset($request['hour'])) {
+                        continue; // Skip this request if required keys are missing
+                      }
+
                       $day = $request['day'];
                       $hour = (int) $request['hour'];
+                      if (!isset($pendingRequests[$day])) {
+                        $pendingRequests[$day] = [];
+                      }
+                      if (!isset($pendingRequests[$day][$hour])) {
+                        $pendingRequests[$day][$hour] = [];
+                      }
                       $pendingRequests[$day][$hour][] = $request;
                     }
                   }
@@ -337,67 +368,142 @@ ob_start();
                   echo '<td class="time-label">' . $displayTime . '</td>';
                   echo '<td class="time-slot">';
 
-                  if (isset($scheduledSubjects[$currentDay][$hour])) {
-                    $subject = $scheduledSubjects[$currentDay][$hour];
-                    $isOfficeHour = isset($subject['is_office_hour']) && $subject['is_office_hour'] == 1;
+                  if (isset($scheduledSubjects[$currentDay][$hour]) && is_array($scheduledSubjects[$currentDay][$hour])) {
+                    echo '<div class="d-flex gap-2">'; // Add flex container for side-by-side display
+                    foreach ($scheduledSubjects[$currentDay][$hour] as $subject) {
+                      $isOfficeHour = isset($subject['is_office_hour']) && $subject['is_office_hour'] == 1;
 
-                    echo '<div class="subject-info">';
-                    echo '<div class="subject-title">' . htmlspecialchars($subject['subject_name']) . '</div>';
-                    echo '<div class="subject-meta">';
+                      echo '<div class="subject-info mb-2 flex-grow-1">';
+                      if (isset($subject['subject_name'])) {
+                        echo '<div class="subject-title">' . htmlspecialchars($subject['subject_name']) . '</div>';
+                      }
+                      echo '<div class="subject-meta">';
 
-                    // Subject Code
-                    echo '<div class="subject-meta-item">';
-                    echo '<i class="bi bi-hash"></i>';
-                    echo htmlspecialchars($subject['subject_code']);
-                    echo '</div>';
+                      // Subject Code
+                      if (isset($subject['subject_code'])) {
+                        echo '<div class="subject-meta-item">';
+                        echo '<i class="bi bi-hash"></i> ';
+                        echo htmlspecialchars($subject['subject_code']);
+                        echo '</div>';
+                      }
 
-                    // Teacher Info
-                    if (isset($subject['teacher_name']) && !empty($subject['teacher_name'])) {
-                      echo '<div class="subject-meta-item">';
-                      echo '<i class="bi bi-person-circle"></i>';
-                      echo htmlspecialchars($subject['teacher_name']);
+                      // Teacher Info
+                      if (isset($subject['teacher_name']) && !empty($subject['teacher_name'])) {
+                        echo '<div class="subject-meta-item">';
+                        echo '<i class="bi bi-person-circle"></i> ';
+                        echo htmlspecialchars($subject['teacher_name']);
+                        echo '</div>';
+                      }
+
+                      // Class Info
+                      if (isset($subject['class_name']) && !empty($subject['class_name'])) {
+                        echo '<div class="subject-meta-item">';
+                        echo '<i class="bi bi-building"></i> ';
+                        echo htmlspecialchars($subject['class_name']);
+                        echo '</div>';
+                      }
+
+                      echo '</div>'; // Close subject-meta
+                      echo '<div class="d-flex  justify-content-end mt-2">';
+                      echo '<a href="/supervisor/subjects/delete/' . $subject['id'] . '" 
+                                class="btn btn-sm w-100 btn-danger" 
+                                onclick="return confirm(\'Are you sure you want to delete this subject?\');">';
+                      echo '<i class="bi bi-trash"></i> Delete';
+                      echo '</a>';
                       echo '</div>';
+                      echo '</div>'; // Close subject-info
                     }
 
-                    // Class Info
-                    if (isset($subject['class_name']) && !empty($subject['class_name'])) {
-                      echo '<div class="subject-meta-item">';
-                      echo '<i class="bi bi-building"></i>';
-                      echo htmlspecialchars($subject['class_name']);
-                      echo '</div>';
-                    }
+                    // Check if there are pending requests for this time slot
+                    if (isset($pendingRequests[$currentDay][$hour]) && !empty($pendingRequests[$currentDay][$hour])) {
+                      foreach ($pendingRequests[$currentDay][$hour] as $request) {
+                        echo '<div class="subject-info mb-2 flex-grow-1" style="background-color: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107;">';
+                        echo '<div class="subject-title">' .
+                          (!empty($request['subject_name']) ? htmlspecialchars($request['subject_name']) : 'Unnamed Subject') .
+                          '</div>';
+                        echo '<div class="subject-meta">';
 
-                    // Place Info
-                    if (isset($subject['place']) && !empty($subject['place'])) {
-                      echo '<div class="subject-meta-item">';
-                      echo '<i class="bi bi-geo-alt"></i>';
-                      echo htmlspecialchars($subject['place']);
-                      echo '</div>';
-                    }
+                        // Subject Code
+                        if (!empty($request['subject_code'])) {
+                          echo '<div class="subject-meta-item">';
+                          echo '<i class="bi bi-hash"></i> ';
+                          echo htmlspecialchars($request['subject_code']);
+                          echo '</div>';
+                        }
 
-                    echo '</div>'; // Close subject-meta
-                    echo '</div>'; // Close subject-info
+                        // Teacher Info
+                        if (!empty($request['teacher_name'])) {
+                          echo '<div class="subject-meta-item">';
+                          echo '<i class="bi bi-person-circle"></i> ';
+                          echo htmlspecialchars($request['teacher_name']);
+                          echo '</div>';
+                        }
+
+                        // Class Info
+                        if (!empty($request['class_name'])) {
+                          echo '<div class="subject-meta-item">';
+                          echo '<i class="bi bi-building"></i> ';
+                          echo htmlspecialchars($request['class_name']);
+                          echo '</div>';
+                        }
+
+                        echo '</div>'; // Close subject-meta
+                        echo '<div class="d-flex justify-content-end mt-2">';
+                        echo '<a href="/supervisor/requests/approve/' . $request['id'] . '" 
+                                  class="btn btn-sm btn-success me-1" 
+                                  title="Approve Request"
+                                  onclick="return confirm(\'Are you sure you want to approve this request?\');">';
+                        echo '<i class="bi bi-check-lg"></i> Approve';
+                        echo '</a>';
+
+                        echo '<a href="/supervisor/requests/decline/' . $request['id'] . '" 
+                                  class="btn btn-sm btn-danger" 
+                                  title="Decline Request"
+                                  onclick="return confirm(\'Are you sure you want to decline this request?\');">';
+                        echo '<i class="bi bi-x-lg"></i> Decline';
+                        echo '</a>';
+                        echo '</div>';
+                        echo '</div>'; // Close subject-info
+                      }
+                    }
+                    echo '</div>'; // Close flex container
                   }
-                  // Check if there are pending requests for this time slot
+                  // Check if there are pending requests for this time slot (when no subjects)
                   elseif (isset($pendingRequests[$currentDay][$hour]) && !empty($pendingRequests[$currentDay][$hour])) {
+                    echo '<div class="d-flex gap-2">'; // Add flex container for side-by-side display
                     foreach ($pendingRequests[$currentDay][$hour] as $request) {
-                      echo '<div class="position-absolute top-0 start-0 end-0 bottom-0 p-2" 
-                                 style="background-color: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107;">';
-
-                      echo '<div class="d-flex justify-content-between align-items-start">';
-                      echo '<div>';
-                      echo '<div class="fw-bold">' .
+                      echo '<div class="subject-info mb-2 flex-grow-1" style="background-color: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107;">';
+                      echo '<div class="subject-title">' .
                         (!empty($request['subject_name']) ? htmlspecialchars($request['subject_name']) : 'Unnamed Subject') .
                         '</div>';
-                      echo '<div class="small text-muted">' .
-                        (!empty($request['subject_code']) ? htmlspecialchars($request['subject_code']) : 'No code') .
-                        '</div>';
-                      echo '<div class="small mt-1">';
-                      echo '<span class="badge bg-warning">Request by: ' . htmlspecialchars($request['teacher_name']) . '</span>';
-                      echo '</div>';
-                      echo '</div>';
+                      echo '<div class="subject-meta">';
 
-                      echo '<div class="d-flex">';
+                      // Subject Code
+                      if (!empty($request['subject_code'])) {
+                        echo '<div class="subject-meta-item">';
+                        echo '<i class="bi bi-hash"></i> ';
+                        echo htmlspecialchars($request['subject_code']);
+                        echo '</div>';
+                      }
+
+                      // Teacher Info
+                      if (!empty($request['teacher_name'])) {
+                        echo '<div class="subject-meta-item">';
+                        echo '<i class="bi bi-person-circle"></i> ';
+                        echo htmlspecialchars($request['teacher_name']);
+                        echo '</div>';
+                      }
+
+                      // Class Info
+                      if (!empty($request['class_name'])) {
+                        echo '<div class="subject-meta-item">';
+                        echo '<i class="bi bi-building"></i> ';
+                        echo htmlspecialchars($request['class_name']);
+                        echo '</div>';
+                      }
+
+                      echo '</div>'; // Close subject-meta
+                      echo '<div class="d-flex justify-content-end mt-2">';
                       echo '<a href="/supervisor/requests/approve/' . $request['id'] . '" 
                                 class="btn btn-sm btn-success me-1" 
                                 title="Approve Request"
@@ -412,12 +518,13 @@ ob_start();
                       echo '<i class="bi bi-x-lg"></i> Decline';
                       echo '</a>';
                       echo '</div>';
-                      echo '</div>';
-
-                      echo '</div>';
+                      echo '</div>'; // Close subject-info
                     }
-                  } else {
-                    echo '<div class="empty-slot">No subject scheduled</div>';
+                    echo '</div>'; // Close flex container
+                  }
+                  // Empty slot - show empty message
+                  else {
+                    echo '<div class="empty-slot">Empty</div>';
                   }
                   echo '</td>';
                   echo '</tr>';

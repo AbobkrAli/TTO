@@ -437,30 +437,31 @@ class SupervisorController extends Controller
   /**
    * Delete a subject
    * 
-   * @param int $id Subject ID 
+   * @param int $id Subject ID
    */
   public function deleteSubject($id)
   {
-    $subject = $this->subjectModel->getById($id);
-    if (!$subject) {
-      $_SESSION['error'] = 'Subject not found';
-      redirect('/supervisor/departments');
-    }
+    try {
+      // Get the subject to get its department ID
+      $subject = $this->subjectModel->getById($id);
 
-    $departmentId = $subject['department_id'];
-    $day = $subject['day'];
+      if (!$subject) {
+        $_SESSION['error'] = 'Subject not found';
+        redirect('/supervisor/departments');
+      }
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      // Delete the subject
       if ($this->subjectModel->delete($id)) {
         $_SESSION['success'] = 'Subject deleted successfully';
       } else {
         $_SESSION['error'] = 'Failed to delete subject';
       }
-      redirect('/supervisor/departments/view/' . $departmentId . '?day=' . $day);
-    } else {
-      // Show confirmation page or handle with JavaScript confirm
-      redirect('/supervisor/departments/view/' . $departmentId . '?day=' . $day);
+    } catch (Exception $e) {
+      $_SESSION['error'] = 'Error deleting subject: ' . $e->getMessage();
     }
+
+    // Redirect back to the department view
+    redirect('/supervisor/departments/view/' . $subject['department_id'] . '?day=' . $subject['day']);
   }
 
   /**
@@ -570,10 +571,10 @@ class SupervisorController extends Controller
    */
   public function requests()
   {
-    $requests = $this->requestModel->getAll();
+    $requests = $this->requestModel->getPending();
     $this->view('supervisor/requests/index', [
       'requests' => $requests,
-      'title' => 'Schedule Requests'
+      'title' => 'Pending Schedule Requests'
     ]);
   }
 
@@ -585,33 +586,41 @@ class SupervisorController extends Controller
   public function approveRequest($requestId)
   {
     try {
+      // Get the request
       $request = $this->requestModel->getById($requestId);
+
       if (!$request) {
-        throw new Exception('Request not found');
+        $_SESSION['error'] = 'Request not found';
+        redirect('/supervisor/departments');
       }
 
-      // Check if class exists if class_id is provided
-      $class_id = null;
-      if (!empty($request['class_id'])) {
-        $class = $this->classModel->getById($request['class_id']);
-        if ($class) {
-          $class_id = $request['class_id'];
-        }
+      // Check if request is pending
+      if ($request['status'] !== 'pending') {
+        $_SESSION['error'] = 'This request has already been processed';
+        redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
       }
 
-      // Generate subject code and name for office hours if not provided
-      $subject_code = $request['subject_code'] ?? 'OH-' . date('Ymd') . '-' . $requestId;
-      $subject_name = $request['subject_name'] ?? 'Office Hours (' . $request['teacher_name'] . ')';
+      // Get subject details from request
+      $subject_code = $request['subject_code'] ?? 'SUB' . time();
+      $subject_name = $request['subject_name'] ?? 'Unnamed Subject';
+      $class_id = $request['class_id'] ?? null;
 
-      // Create subject from request
+      // Check if subject code already exists in the department
+      if ($this->subjectModel->existsInDepartment($subject_code, $request['department_id'])) {
+        $_SESSION['error'] = "A subject with code '{$subject_code}' already exists in this department. Please use a different code.";
+        redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
+        return;
+      }
+
+      // Create subject from request (treating it as a normal subject)
       $subjectId = $this->subjectModel->create(
         $subject_code,
         $subject_name,
         $request['department_id'],
         $request['day'],
         $request['hour'],
-        $class_id,  // Use validated class_id or null
-        true,  // Mark as office hour
+        $class_id,
+        false,  // Not an office hour
         $requestId,
         $request['teacher_id']
       );
@@ -624,7 +633,7 @@ class SupervisorController extends Controller
       $_SESSION['error'] = 'Error approving request: ' . $e->getMessage();
     }
 
-    redirect('/supervisor/requests');
+    redirect('/supervisor/departments/view/' . $request['department_id'] . '?day=' . $request['day']);
   }
 
   /**

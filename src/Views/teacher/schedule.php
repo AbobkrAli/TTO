@@ -137,6 +137,22 @@ ob_start();
 </style>
 
 <div class="container-fluid py-4">
+  <?php if (isset($_SESSION['success'])): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <?= $_SESSION['success'] ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <?php unset($_SESSION['success']); ?>
+  <?php endif; ?>
+
+  <?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <?= $_SESSION['error'] ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <?php unset($_SESSION['error']); ?>
+  <?php endif; ?>
+
   <!-- Department Schedule Card -->
   <div class="schedule-card">
     <div class="schedule-header">
@@ -190,19 +206,40 @@ ob_start();
 
             // Group subjects by day and hour
             $scheduledSubjects = [];
-            foreach ($subjects as $subject) {
-              $day = $subject['day'];
-              $hour = (int) $subject['hour'];
-              $scheduledSubjects[$day][$hour] = $subject;
+            if (isset($subjects) && is_array($subjects)) {
+              foreach ($subjects as $day => $daySubjects) {
+                foreach ($daySubjects as $hour => $hourSubjects) {
+                  if (!isset($scheduledSubjects[$day])) {
+                    $scheduledSubjects[$day] = [];
+                  }
+                  if (!isset($scheduledSubjects[$day][$hour])) {
+                    $scheduledSubjects[$day][$hour] = [];
+                  }
+                  $scheduledSubjects[$day][$hour] = $hourSubjects;
+                }
+              }
             }
 
             // Group requests by day and hour
             $pendingRequests = [];
-            foreach ($requests as $request) {
-              if ($request['status'] === 'pending') {
-                $day = $request['day'];
-                $hour = (int) $request['hour'];
-                $pendingRequests[$day][$hour] = $request;
+            if (isset($requests) && is_array($requests)) {
+              foreach ($requests as $request) {
+                if ($request['status'] === 'pending') {
+                  // Check if required keys exist
+                  if (!isset($request['day']) || !isset($request['hour'])) {
+                    continue; // Skip this request if required keys are missing
+                  }
+
+                  $day = $request['day'];
+                  $hour = (int) $request['hour'];
+                  if (!isset($pendingRequests[$day])) {
+                    $pendingRequests[$day] = [];
+                  }
+                  if (!isset($pendingRequests[$day][$hour])) {
+                    $pendingRequests[$day][$hour] = [];
+                  }
+                  $pendingRequests[$day][$hour][] = $request;
+                }
               }
             }
 
@@ -212,30 +249,48 @@ ob_start();
               echo '<td class="time-slot">';
 
               // Check if there's a subject at this time slot
-              if (isset($scheduledSubjects[$selectedDay][$hour])) {
-                $subject = $scheduledSubjects[$selectedDay][$hour];
-                echo '<div class="subject-item">';
-                echo '<div class="subject-title">' . htmlspecialchars($subject['subject_name']) . '</div>';
-                echo '<div class="subject-code">' . htmlspecialchars($subject['subject_code']) . '</div>';
+              if (isset($scheduledSubjects[$selectedDay][$hour]) && is_array($scheduledSubjects[$selectedDay][$hour])) {
+                echo '<div class="d-flex gap-2">'; // Add flex container for side-by-side display
+                foreach ($scheduledSubjects[$selectedDay][$hour] as $subject) {
+                  echo '<div class="subject-item flex-grow-1">'; // Make each subject item grow to fill space
+                  echo '<div class="subject-title">' . htmlspecialchars($subject['subject_name']) . '</div>';
+                  echo '<div class="subject-meta">';
 
-                // Add teacher information if available
-                if (!empty($subject['teacher_name'])) {
-                  echo '<div class="teacher-info mt-2">';
-                  echo '<i class="bi bi-person-circle"></i> ';
-                  echo '<span class="text-muted">Teacher: </span>';
-                  echo htmlspecialchars($subject['teacher_name']);
+                  // Subject Code
+                  echo '<div class="subject-meta-item">';
+                  echo '<i class="bi bi-hash"></i> ';
+                  echo htmlspecialchars($subject['subject_code']);
                   echo '</div>';
-                }
 
-                // Add class information if available
-                if (!empty($subject['class_name'])) {
-                  echo '<div class="class-info mt-1">';
-                  echo '<i class="bi bi-building"></i> ';
-                  echo '<span class="text-muted">Class: </span>';
-                  echo htmlspecialchars($subject['class_name']);
-                  echo '</div>';
+                  // Teacher Info
+                  if (!empty($subject['teacher_name'])) {
+                    echo '<div class="subject-meta-item">';
+                    echo '<i class="bi bi-person-circle"></i> ';
+                    echo htmlspecialchars($subject['teacher_name']);
+                    echo '</div>';
+                  }
+
+                  // Class Info
+                  if (!empty($subject['class_name'])) {
+                    echo '<div class="subject-meta-item">';
+                    echo '<i class="bi bi-building"></i> ';
+                    echo htmlspecialchars($subject['class_name']);
+                    echo '</div>';
+                  }
+
+                  echo '</div>'; // Close subject-meta
+                  echo '</div>'; // Close subject-item
                 }
-                echo '</div>';
+                // Add request button even when there are subjects
+                echo '<button type="button" class="add-request-btn" 
+                              data-bs-toggle="modal" 
+                              data-bs-target="#requestModal" 
+                              data-day="' . $selectedDay . '" 
+                              data-hour="' . $hour . '"
+                              data-time="' . $displayTime . '">';
+                echo '<i class="bi bi-plus-circle me-2"></i> Request This Slot';
+                echo '</button>';
+                echo '</div>'; // Close flex container
               }
               // Check if there's a pending request for this time slot
               elseif (isset($pendingRequests[$selectedDay][$hour])) {
@@ -244,9 +299,25 @@ ob_start();
                 echo '<div class="subject-title">' .
                   (empty($request['subject_name']) ? 'Time Slot Request' : htmlspecialchars($request['subject_name'])) .
                   '</div>';
+                echo '<div class="subject-meta">';
+
+                // Subject Code
                 if (!empty($request['subject_code'])) {
-                  echo '<div class="subject-code">' . htmlspecialchars($request['subject_code']) . '</div>';
+                  echo '<div class="subject-meta-item">';
+                  echo '<i class="bi bi-hash"></i> ';
+                  echo htmlspecialchars($request['subject_code']);
+                  echo '</div>';
                 }
+
+                // Class Info
+                if (!empty($request['class_name'])) {
+                  echo '<div class="subject-meta-item">';
+                  echo '<i class="bi bi-building"></i> ';
+                  echo htmlspecialchars($request['class_name']);
+                  echo '</div>';
+                }
+
+                echo '</div>'; // Close subject-meta
                 echo '<span class="request-badge">Pending</span>';
                 echo '<a href="/teacher/requests/cancel/' . $request['id'] . '" 
                          class="btn btn-sm btn-outline-danger position-absolute bottom-0 end-0 m-2"

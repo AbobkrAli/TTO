@@ -21,10 +21,12 @@ class Request
   {
     $sql = "SELECT r.*, 
                   u.name as teacher_name, 
-                  d.name as department_name 
+                  d.name as department_name,
+                  c.name as class_name
             FROM requests r
             JOIN users u ON r.teacher_id = u.id
             JOIN departments d ON r.department_id = d.id
+            LEFT JOIN classes c ON r.class_id = c.id
             ORDER BY r.created_at DESC";
     $stmt = $this->db->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -36,10 +38,12 @@ class Request
   public function getByDepartment($departmentId)
   {
     $sql = "SELECT r.*, 
-                  u.name as teacher_name
+                  u.name as teacher_name,
+                  c.name as class_name
             FROM requests r
             JOIN users u ON r.teacher_id = u.id
-            WHERE r.department_id = ?
+            LEFT JOIN classes c ON r.class_id = c.id
+            WHERE r.department_id = ? AND r.status = 'pending'
             ORDER BY r.created_at DESC";
     $stmt = $this->db->query($sql, [$departmentId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -51,9 +55,11 @@ class Request
   public function getByTeacher($teacherId)
   {
     $sql = "SELECT r.*, 
-                  d.name as department_name
+                  d.name as department_name,
+                  c.name as class_name
             FROM requests r
             JOIN departments d ON r.department_id = d.id
+            LEFT JOIN classes c ON r.class_id = c.id
             WHERE r.teacher_id = ?
             ORDER BY r.created_at DESC";
     $stmt = $this->db->query($sql, [$teacherId]);
@@ -67,10 +73,12 @@ class Request
   {
     $sql = "SELECT r.*, 
                   u.name as teacher_name, 
-                  d.name as department_name
+                  d.name as department_name,
+                  c.name as class_name
             FROM requests r
             JOIN users u ON r.teacher_id = u.id
             JOIN departments d ON r.department_id = d.id
+            LEFT JOIN classes c ON r.class_id = c.id
             WHERE r.id = ?";
     $stmt = $this->db->query($sql, [$id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -79,11 +87,11 @@ class Request
   /**
    * Create a new request
    */
-  public function create($teacherId, $departmentId, $day, $hour, $subjectCode = null, $subjectName = null)
+  public function create($teacherId, $departmentId, $day, $hour, $subjectCode = null, $subjectName = null, $classId = null)
   {
-    $sql = "INSERT INTO requests (teacher_id, department_id, day, hour, subject_code, subject_name, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'pending')";
-    $this->db->query($sql, [$teacherId, $departmentId, $day, $hour, $subjectCode, $subjectName]);
+    $sql = "INSERT INTO requests (teacher_id, department_id, day, hour, subject_code, subject_name, class_id, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')";
+    $this->db->query($sql, [$teacherId, $departmentId, $day, $hour, $subjectCode, $subjectName, $classId]);
     return $this->db->getConnection()->lastInsertId();
   }
 
@@ -124,12 +132,33 @@ class Request
   {
     $sql = "SELECT r.*, 
                   u.name as teacher_name,
+                  c.name as class_name,
                   CONCAT('REQ-', r.id) as request_reference
             FROM requests r
             JOIN users u ON r.teacher_id = u.id
+            LEFT JOIN classes c ON r.class_id = c.id
             WHERE r.department_id = ? AND r.status = 'approved'
             ORDER BY r.day, r.hour";
     $stmt = $this->db->query($sql, [$departmentId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * Get all pending requests
+   */
+  public function getPending()
+  {
+    $sql = "SELECT r.*, 
+                  u.name as teacher_name, 
+                  d.name as department_name,
+                  c.name as class_name
+            FROM requests r
+            JOIN users u ON r.teacher_id = u.id
+            JOIN departments d ON r.department_id = d.id
+            LEFT JOIN classes c ON r.class_id = c.id
+            WHERE r.status = 'pending'
+            ORDER BY r.created_at DESC";
+    $stmt = $this->db->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 }

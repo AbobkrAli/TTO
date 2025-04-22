@@ -51,7 +51,23 @@ class Subject
             WHERE s.department_id = ? 
             ORDER BY s.day, s.hour";
     $stmt = $this->db->query($sql, [$departmentId]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Group subjects by day and hour
+    $groupedSubjects = [];
+    foreach ($subjects as $subject) {
+      $day = $subject['day'];
+      $hour = $subject['hour'];
+      if (!isset($groupedSubjects[$day])) {
+        $groupedSubjects[$day] = [];
+      }
+      if (!isset($groupedSubjects[$day][$hour])) {
+        $groupedSubjects[$day][$hour] = [];
+      }
+      $groupedSubjects[$day][$hour][] = $subject;
+    }
+
+    return $groupedSubjects;
   }
 
   /**
@@ -77,6 +93,17 @@ class Subject
   {
     $sql = "SELECT COUNT(*) as count FROM subjects WHERE subject_code = ? AND department_id = ?";
     $stmt = $this->db->query($sql, [$code, $departmentId]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $result['count'] > 0;
+  }
+
+  /**
+   * Check if a subject exists at the same time slot in the department
+   */
+  public function existsAtTimeSlot($departmentId, $day, $hour)
+  {
+    $sql = "SELECT COUNT(*) as count FROM subjects WHERE department_id = ? AND day = ? AND hour = ?";
+    $stmt = $this->db->query($sql, [$departmentId, $day, $hour]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     return $result['count'] > 0;
   }
@@ -116,26 +143,6 @@ class Subject
     }
   }
 
-  // /**
-  //  * Update an existing subject
-  //  */
-  // public function update($id, $subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId = null)
-  // {
-  //   $sql = "UPDATE subjects 
-  //           SET subject_code = ?, name = ?, department_id = ?, day = ?, hour = ?, teacher_id = ? 
-  //           WHERE id = ?";
-  //   return $this->db->query($sql, [$subjectCode, $subjectName, $departmentId, $day, $hour, $teacherId, $id]);
-  // }
-
-  /**
-   * Update a subject's teacher
-   */
-  // public function updateTeacher($id, $teacherId)
-  // {
-  //   $sql = "UPDATE subjects SET teacher_id = ? WHERE id = ?";
-  //   return $this->db->query($sql, [$teacherId, $id]);
-  // }
-
   /**
    * Delete a subject
    */
@@ -144,17 +151,6 @@ class Subject
     $sql = "DELETE FROM subjects WHERE id = ?";
     return $this->db->query($sql, [$id]);
   }
-
-  /**
-   * Count subjects in department
-   */
-  // public function countByDepartment($departmentId)
-  // {
-  //   $sql = "SELECT COUNT(*) as count FROM subjects WHERE department_id = ?";
-  //   $stmt = $this->db->query($sql, [$departmentId]);
-  //   $result = $stmt->fetch(PDO::FETCH_ASSOC);
-  //   return $result['count'];
-  // }
 
   /**
    * Format time to 12-hour format

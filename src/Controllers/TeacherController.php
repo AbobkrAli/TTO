@@ -148,6 +148,7 @@ class TeacherController extends Controller
     $hour = (int) ($_POST['hour'] ?? 0);
     $subjectCode = $_POST['subject_code'] ?? '';
     $subjectName = $_POST['subject_name'] ?? '';
+    $classId = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
 
     if (empty($day) || $hour < 9 || $hour > 17) {
       $_SESSION['error'] = "Invalid day or hour selected.";
@@ -167,7 +168,8 @@ class TeacherController extends Controller
       $day,
       $hour,
       $subjectCode,
-      $subjectName
+      $subjectName,
+      $classId
     );
 
     $_SESSION['success'] = "Schedule request submitted successfully.";

@@ -39,43 +39,88 @@
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($requests as $request): ?>
+            <?php if (empty($requests)): ?>
               <tr>
-                <td><?php echo htmlspecialchars($request['teacher_name']); ?></td>
-                <td>
-                  <?php echo htmlspecialchars($request['subject_name']); ?>
-                  <small class="text-muted d-block"><?php echo htmlspecialchars($request['subject_code']); ?></small>
-                </td>
-                <td><?php echo htmlspecialchars($request['day']); ?></td>
-                <td><?php echo htmlspecialchars($request['hour']); ?></td>
-                <td><?php echo htmlspecialchars($request['class_name'] ?? 'Not assigned'); ?></td>
-                <td>
-                  <span class="badge bg-<?php
-                  echo $request['status'] === 'pending' ? 'warning' :
-                    ($request['status'] === 'approved' ? 'success' : 'danger');
-                  ?>">
-                    <?php echo ucfirst($request['status']); ?>
-                  </span>
-                </td>
-                <td>
-                  <?php if ($request['status'] === 'pending'): ?>
-                    <div class="btn-group">
-                      <a href="/supervisor/requests/approve/<?php echo $request['id']; ?>" class="btn btn-sm btn-success">
-                        Approve
-                      </a>
-                      <a href="/supervisor/requests/decline/<?php echo $request['id']; ?>" class="btn btn-sm btn-danger">
-                        Decline
-                      </a>
-                    </div>
-                  <?php else: ?>
-                    <span class="text-muted">Processed</span>
-                  <?php endif; ?>
+                <td colspan="7" class="text-center py-4">
+                  <div class="text-muted">
+                    <i class="bi bi-inbox fs-1"></i>
+                    <p class="mt-2 mb-0">No requests found</p>
+                  </div>
                 </td>
               </tr>
-            <?php endforeach; ?>
+            <?php else: ?>
+              <?php foreach ($requests as $request): ?>
+                <tr>
+                  <td><?php echo htmlspecialchars($request['teacher_name']); ?></td>
+                  <td>
+                    <?php if (!empty($request['subject_name'])): ?>
+                      <div><?php echo htmlspecialchars($request['subject_name']); ?></div>
+                      <div class="small text-muted"><?php echo htmlspecialchars($request['subject_code'] ?? 'No code'); ?>
+                      </div>
+                    <?php else: ?>
+                      <span class="text-muted">Not specified</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php echo htmlspecialchars($request['day']); ?>
+                    <div class="small text-muted">
+                      <?php echo sprintf('%02d:00', (int) $request['hour']); ?> -
+                      <?php echo sprintf('%02d:00', (int) $request['hour'] + 1); ?>
+                    </div>
+                  </td>
+                  <td>
+                    <?php if (!empty($request['class_name'])): ?>
+                      <span class="badge bg-info"><?php echo htmlspecialchars($request['class_name']); ?></span>
+                    <?php else: ?>
+                      <span class="text-muted">Not specified</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php
+                    $statusClass = '';
+                    $statusLabel = '';
+                    switch ($request['status']) {
+                      case 'pending':
+                        $statusClass = 'bg-warning text-dark';
+                        $statusLabel = 'Pending';
+                        break;
+                      case 'approved':
+                        $statusClass = 'bg-success';
+                        $statusLabel = 'Approved';
+                        break;
+                      case 'declined':
+                        $statusClass = 'bg-danger';
+                        $statusLabel = 'Declined';
+                        break;
+                    }
+                    ?>
+                    <span class="badge <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
+                  </td>
+                  <td>
+                    <?php if ($request['status'] === 'pending'): ?>
+                      <div class="btn-group">
+                        <a href="/supervisor/requests/approve/<?php echo $request['id']; ?>" class="btn btn-sm btn-success">
+                          <i class="bi bi-check-circle"></i> Approve
+                        </a>
+                        <a href="/supervisor/requests/decline/<?php echo $request['id']; ?>" class="btn btn-sm btn-danger">
+                          <i class="bi bi-x-circle"></i> Decline
+                        </a>
+                      </div>
+                    <?php else: ?>
+                      <span class="text-muted">No actions available</span>
+                    <?php endif; ?>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+
+<?php
+$content = ob_get_clean();
+require dirname(dirname(dirname(__DIR__))) . '/Views/layout.php';
+?>

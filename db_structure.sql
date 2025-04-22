@@ -116,7 +116,6 @@ CREATE TABLE `subjects` (
   `teacher_id` int DEFAULT NULL COMMENT 'Teacher assigned to this subject',
   `place` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_department_day_hour` (`department_id`,`day`,`hour`) COMMENT 'Prevent scheduling conflicts in the same timeslot',
   KEY `idx_subject_department` (`department_id`),
   KEY `idx_subject_day_hour` (`day`,`hour`),
   KEY `idx_subject_type` (`is_office_hour`),
