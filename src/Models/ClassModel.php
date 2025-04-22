@@ -71,4 +71,33 @@ class ClassModel
       throw new \Exception("Database error occurred while deleting class: " . $e->getMessage());
     }
   }
+
+  /**
+   * Get all classes with their subject usage count
+   */
+  public function getAllWithUsageCount()
+  {
+    $sql = "SELECT c.*, COUNT(s.id) as usage_count 
+            FROM classes c 
+            LEFT JOIN subjects s ON c.id = s.class_id 
+            GROUP BY c.id 
+            ORDER BY c.name";
+    $stmt = $this->db->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * Get class usage by department
+   */
+  public function getUsageByDepartment($departmentId)
+  {
+    $sql = "SELECT c.*, COUNT(s.id) as usage_count 
+            FROM classes c 
+            LEFT JOIN subjects s ON c.id = s.class_id 
+            WHERE s.department_id = ?
+            GROUP BY c.id 
+            ORDER BY usage_count DESC";
+    $stmt = $this->db->query($sql, [$departmentId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
 }

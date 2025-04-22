@@ -282,6 +282,9 @@ class SupervisorController extends Controller
     // Get all classes
     $classes = $this->classModel->getAll();
 
+    // Get class usage by department
+    $classUsage = $this->classModel->getUsageByDepartment($id);
+
     // Load view with selected day
     require_once dirname(__DIR__) . '/Views/supervisor/departments/view.php';
   }
@@ -669,7 +672,7 @@ class SupervisorController extends Controller
    */
   public function classes()
   {
-    $classes = $this->classModel->getAll();
+    $classes = $this->classModel->getAllWithUsageCount();
     $this->view('supervisor/classes/index', ['classes' => $classes]);
   }
 

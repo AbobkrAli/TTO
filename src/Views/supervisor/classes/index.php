@@ -36,6 +36,7 @@
             <tr>
               <th>ID</th>
               <th>Class Name</th>
+              <th>Usage Count</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
@@ -44,7 +45,7 @@
               <tr>
                 <td colspan="3" class="text-center py-4">
                   <div class="text-muted">
-                    <i class="bi bi-building-x fs-1"></i>
+                    <i class="bi bi-inbox fs-1"></i>
                     <p class="mt-2 mb-0">No classes found</p>
                   </div>
                 </td>
@@ -54,6 +55,11 @@
                 <tr>
                   <td class="fw-bold"><?php echo htmlspecialchars($class['id']); ?></td>
                   <td><?php echo htmlspecialchars($class['name']); ?></td>
+                  <td>
+                    <span class="badge bg-info">
+                      <?php echo $class['usage_count']; ?> subjects
+                    </span>
+                  </td>
                   <td class="text-end">
                     <form action="/supervisor/classes/delete/<?php echo $class['id']; ?>" method="POST" class="d-inline">
                       <input type="hidden" name="csrf_token" value="<?php echo \App\Session::get('csrf_token'); ?>">

@@ -265,8 +265,34 @@ ob_start();
     <div class="tab-pane fade show active" id="subjects" role="tabpanel" aria-labelledby="subjects-tab">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4>Department Schedule</h4>
-
       </div>
+
+      <!-- Class Usage Section -->
+      <?php if (!empty($classUsage)): ?>
+        <div class="card mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Most Used Classes</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <?php foreach ($classUsage as $class): ?>
+                <div class="col-md-3 mb-3">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <h6 class="card-title"><?php echo htmlspecialchars($class['name']); ?></h6>
+                      <p class="card-text">
+                        <span class="badge bg-primary">
+                          <?php echo $class['usage_count']; ?> subjects
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </div>
+      <?php endif; ?>
 
       <!-- Display messages -->
       <?php if (isset($_SESSION['error'])): ?>
