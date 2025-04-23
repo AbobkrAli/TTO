@@ -3,6 +3,6 @@ builder = "nixpacks"
 buildCommand = "composer install --no-dev --optimize-autoloader"
 
 [deploy]
-startCommand = "vendor/bin/heroku-php-apache2 public/"
+startCommand = "php -S 0.0.0.0:$PORT public/index.php"
 healthcheckPath = "/"
 healthcheckTimeout = 100 

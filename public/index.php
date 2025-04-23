@@ -1,5 +1,12 @@
 <?php
 
+// Error reporting for development
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Set timezone
+date_default_timezone_set('UTC');
+
 define('BASE_PATH', dirname(__DIR__));
 
 // Autoload classes
