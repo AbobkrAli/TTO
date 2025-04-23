@@ -20,7 +20,8 @@ class Database
         $socketFile = '/var/run/mysqld/mysqld.sock'; // This is the socket path we found
         $dsn = "mysql:unix_socket={$socketFile};dbname={$config['database']};charset={$config['charset']}";
       } else {
-        $dsn = "mysql:host={$config['host']};dbname={$config['database']};charset={$config['charset']}";
+        $port = isset($config['port']) ? ";port={$config['port']}" : "";
+        $dsn = "mysql:host={$config['host']}{$port};dbname={$config['database']};charset={$config['charset']}";
       }
 
       $this->connection = new PDO($dsn, $config['username'], $config['password'], $config['options']);

@@ -1,17 +1,21 @@
 <?php
 
-// Debug environment variables
-error_log("Database Configuration:");
-error_log("MYSQLHOST: " . getenv('MYSQLHOST'));
-error_log("MYSQLDATABASE: " . getenv('MYSQLDATABASE'));
-error_log("MYSQLUSER: " . getenv('MYSQLUSER'));
-error_log("MYSQLPASSWORD: " . getenv('MYSQLPASSWORD'));
+// Get database URL from environment variable
+$databaseUrl = getenv('DATABASE_URL') ?: 'mysql://root:yuHPIfVykOUfHMEUWQTIHToShgwmMSyn@caboose.proxy.rlwy.net:12570/railway';
+
+// Parse the URL
+$url = parse_url($databaseUrl);
+
+// Debug the parsed URL
+error_log("Database URL: " . $databaseUrl);
+error_log("Parsed URL: " . print_r($url, true));
 
 return [
-  'host' => getenv('MYSQLHOST') ?: 'mysql.railway.internal',
-  'database' => getenv('MYSQLDATABASE') ?: 'railway',
-  'username' => getenv('MYSQLUSER') ?: 'root',
-  'password' => getenv('MYSQLPASSWORD') ?: 'yuHPIfVykOUfHMEUWQTIHToShgwmMSyn',
+  'host' => $url['host'],
+  'port' => $url['port'] ?? 3306,
+  'database' => ltrim($url['path'], '/'),
+  'username' => $url['user'],
+  'password' => $url['pass'],
   'charset' => 'utf8mb4',
   'options' => [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
