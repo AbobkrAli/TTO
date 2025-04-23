@@ -5,6 +5,4 @@ buildCommand = "composer install --no-dev --optimize-autoloader"
 [deploy]
 startCommand = "vendor/bin/heroku-php-apache2 public/"
 healthcheckPath = "/"
-healthcheckTimeout = 100
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 3 
+healthcheckTimeout = 100 
