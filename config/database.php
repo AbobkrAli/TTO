@@ -8,10 +8,10 @@ error_log("MYSQLUSER: " . getenv('MYSQLUSER'));
 error_log("MYSQLPASSWORD: " . getenv('MYSQLPASSWORD'));
 
 return [
-  'host' => getenv('MYSQLHOST') ?: 'localhost',
+  'host' => getenv('MYSQLHOST') ?: 'mysql.railway.internal',
   'database' => getenv('MYSQLDATABASE') ?: 'railway',
   'username' => getenv('MYSQLUSER') ?: 'root',
-  'password' => getenv('MYSQLPASSWORD') ?: '',
+  'password' => getenv('MYSQLPASSWORD') ?: 'yuHPIfVykOUfHMEUWQTIHToShgwmMSyn',
   'charset' => 'utf8mb4',
   'options' => [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
