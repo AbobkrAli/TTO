@@ -1,10 +1,17 @@
 <?php
 
+// Debug environment variables
+error_log("Database Configuration:");
+error_log("MYSQLHOST: " . getenv('MYSQLHOST'));
+error_log("MYSQLDATABASE: " . getenv('MYSQLDATABASE'));
+error_log("MYSQLUSER: " . getenv('MYSQLUSER'));
+error_log("MYSQLPASSWORD: " . getenv('MYSQLPASSWORD'));
+
 return [
-  'host' => getenv('RAILWAY_MYSQL_HOST') ?: 'localhost',
-  'database' => getenv('RAILWAY_MYSQL_DATABASE') ?: 'railway',
-  'username' => getenv('RAILWAY_MYSQL_USERNAME') ?: 'root',
-  'password' => getenv('RAILWAY_MYSQL_PASSWORD') ?: '',
+  'host' => getenv('MYSQLHOST') ?: 'localhost',
+  'database' => getenv('MYSQLDATABASE') ?: 'railway',
+  'username' => getenv('MYSQLUSER') ?: 'root',
+  'password' => getenv('MYSQLPASSWORD') ?: '',
   'charset' => 'utf8mb4',
   'options' => [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
