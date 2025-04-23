@@ -1,10 +1,10 @@
 <?php
 
 return [
-  'host' => 'mysql.railway.internal',
-  'database' => 'railway',
-  'username' => 'root',
-  'password' => 'yuHPIfVykOUfHMEUWQTIHToShgwmMSyn',
+  'host' => getenv('RAILWAY_MYSQL_HOST') ?: 'localhost',
+  'database' => getenv('RAILWAY_MYSQL_DATABASE') ?: 'railway',
+  'username' => getenv('RAILWAY_MYSQL_USERNAME') ?: 'root',
+  'password' => getenv('RAILWAY_MYSQL_PASSWORD') ?: '',
   'charset' => 'utf8mb4',
   'options' => [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
