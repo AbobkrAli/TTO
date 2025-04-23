@@ -1,10 +1,10 @@
 <?php
 
 return [
-  'host' => 'localhost',
-  'database' => 'education_management',
-  'username' => 'phpuser',
-  'password' => 'password123',
+  'host' => 'mysql.railway.internal',
+  'database' => 'railway',
+  'username' => 'root',
+  'password' => 'yuHPIfVykOUfHMEUWQTIHToShgwmMSyn',
   'charset' => 'utf8mb4',
   'options' => [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
