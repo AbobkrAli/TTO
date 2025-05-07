@@ -1,6 +1,6 @@
 # TTO
 
-A simple PHP project for school management with different user roles (supervisor and teacher).
+A simple PHP project for college management with different user roles (supervisor and teacher).
 
 ## Features
 
