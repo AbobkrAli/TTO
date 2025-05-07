@@ -130,7 +130,25 @@ class TeacherController extends Controller
     $selectedDay = $selectedDay ?? ($_GET['day'] ?? 'Monday');
 
     // Get all subjects in the department
-    $subjects = $this->subjectModel->getByDepartment($user['department_id']);
+    $allSubjects = $this->subjectModel->getByDepartment($user['department_id']);
+
+    // Filter subjects to only include those assigned to this teacher
+    $subjects = [];
+    foreach ($allSubjects as $day => $daySubjects) {
+      foreach ($daySubjects as $hour => $hourSubjects) {
+        foreach ($hourSubjects as $subject) {
+          if (isset($subject['teacher_id']) && $subject['teacher_id'] == $user['id']) {
+            if (!isset($subjects[$day])) {
+              $subjects[$day] = [];
+            }
+            if (!isset($subjects[$day][$hour])) {
+              $subjects[$day][$hour] = [];
+            }
+            $subjects[$day][$hour][] = $subject;
+          }
+        }
+      }
+    }
 
     // Get pending requests made by this teacher
     $requests = $this->requestModel->getByTeacher($user['id']);
@@ -138,13 +156,18 @@ class TeacherController extends Controller
     // Get all classes
     $classes = $this->classModel->getAll();
 
+    // Get optional subjects for the department
+    $optionalSubjectModel = new \App\Models\OptionalSubject();
+    $optionalSubjects = $optionalSubjectModel->getByDepartment($user['department_id']);
+
     // Load view
     $this->view('teacher/schedule', [
       'user' => $user,
       'subjects' => $subjects,
       'requests' => $requests,
       'selectedDay' => $selectedDay,
-      'classes' => $classes
+      'classes' => $classes,
+      'optionalSubjects' => $optionalSubjects
     ]);
   }
 
@@ -166,34 +189,74 @@ class TeacherController extends Controller
     // Get and validate input data
     $day = $_POST['day'] ?? '';
     $hour = (int) ($_POST['hour'] ?? 0);
-    $subjectCode = $_POST['subject_code'] ?? '';
-    $subjectName = $_POST['subject_name'] ?? '';
+    $subjectId = (int) ($_POST['subject_id'] ?? 0);
     $classId = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
 
-    if (empty($day) || $hour < 9 || $hour > 17) {
-      $_SESSION['error'] = "Invalid day or hour selected.";
+    if (empty($day) || $hour < 9 || $hour > 17 || $subjectId <= 0) {
+      $_SESSION['error'] = "Invalid day, hour, or subject selected.";
       redirect('/teacher/schedule?day=' . $day);
     }
 
-    // Check if slot is already requested
-    if ($this->requestModel->isSlotRequested($user['id'], $user['department_id'], $day, $hour)) {
-      $_SESSION['error'] = "You already have a pending request for this time slot.";
+    // Get the optional subject details
+    $optionalSubjectModel = new \App\Models\OptionalSubject();
+    $optionalSubject = $optionalSubjectModel->getById($subjectId);
+
+    if (!$optionalSubject || $optionalSubject['department_id'] != $user['department_id']) {
+      $_SESSION['error'] = "Invalid subject selected.";
       redirect('/teacher/schedule?day=' . $day);
     }
 
-    // Create the request
-    $this->requestModel->create(
-      $user['id'],
-      $user['department_id'],
-      $day,
-      $hour,
-      $subjectCode,
-      $subjectName,
-      $classId
-    );
+    try {
+      // Create the subject directly
+      $result = $this->subjectModel->create(
+        $optionalSubject['subject_code'],
+        $optionalSubject['name'],
+        $user['department_id'],
+        $day,
+        $hour,
+        $classId,
+        false,  // isOfficeHour
+        null,   // requestId
+        $user['id']  // teacherId
+      );
 
-    $_SESSION['success'] = "Schedule request submitted successfully.";
+      if ($result) {
+        if ($this->isAjaxRequest()) {
+          header('Content-Type: application/json');
+          echo json_encode([
+            'success' => true,
+            'message' => "Subject added successfully."
+          ]);
+          exit;
+        }
+
+        $_SESSION['success'] = "Subject added successfully.";
+      } else {
+        throw new \Exception("Failed to add subject.");
+      }
+    } catch (\Exception $e) {
+      if ($this->isAjaxRequest()) {
+        header('Content-Type: application/json');
+        echo json_encode([
+          'success' => false,
+          'message' => $e->getMessage()
+        ]);
+        exit;
+      }
+
+      $_SESSION['error'] = $e->getMessage();
+    }
+
     redirect('/teacher/schedule?day=' . $day);
+  }
+
+  /**
+   * Check if the request is an AJAX request
+   */
+  private function isAjaxRequest()
+  {
+    return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
   }
 
   /**
@@ -201,27 +264,74 @@ class TeacherController extends Controller
    */
   public function cancelRequest($id)
   {
-    $user = $this->getCurrentUser();
-
     // Get the request
     $request = $this->requestModel->getById($id);
 
-    // Check if request exists and belongs to this teacher
-    if (!$request || $request['teacher_id'] != $user['id']) {
-      $_SESSION['error'] = "Request not found or you don't have permission to cancel it.";
+    if (!$request) {
+      $_SESSION['error'] = 'Request not found';
       redirect('/teacher/schedule');
     }
 
-    // Only allow cancelling pending requests
+    // Check if the request belongs to the current user
+    if ($request['teacher_id'] != $_SESSION['user_id']) {
+      $_SESSION['error'] = 'You can only cancel your own requests';
+      redirect('/teacher/schedule');
+    }
+
+    // Check if the request is still pending
     if ($request['status'] !== 'pending') {
-      $_SESSION['error'] = "Only pending requests can be cancelled.";
+      $_SESSION['error'] = 'You can only cancel pending requests';
       redirect('/teacher/schedule');
     }
 
     // Delete the request
-    $this->requestModel->delete($id);
+    if ($this->requestModel->delete($id)) {
+      $_SESSION['success'] = 'Request cancelled successfully';
+    } else {
+      $_SESSION['error'] = 'Failed to cancel request';
+    }
 
-    $_SESSION['success'] = "Request cancelled successfully.";
-    redirect('/teacher/schedule?day=' . $request['day']);
+    redirect('/teacher/schedule');
+  }
+
+  /**
+   * Delete a subject
+   * 
+   * @param int $id Subject ID
+   */
+  public function deleteSubject($id)
+  {
+    try {
+      $user = $this->getCurrentUser();
+      if (!$user) {
+        $_SESSION['error'] = "You must be logged in to perform this action.";
+        redirect('/login');
+      }
+
+      // Get the subject to verify ownership
+      $subject = $this->subjectModel->getById($id);
+      if (!$subject) {
+        $_SESSION['error'] = 'Subject not found';
+        redirect('/teacher/schedule');
+      }
+
+      // Verify that the subject belongs to this teacher
+      if ($subject['teacher_id'] != $user['id']) {
+        $_SESSION['error'] = 'You can only delete your own subjects';
+        redirect('/teacher/schedule');
+      }
+
+      // Delete the subject
+      if ($this->subjectModel->delete($id)) {
+        $_SESSION['success'] = 'Subject deleted successfully';
+      } else {
+        $_SESSION['error'] = 'Failed to delete subject';
+      }
+    } catch (Exception $e) {
+      $_SESSION['error'] = 'Error deleting subject: ' . $e->getMessage();
+    }
+
+    // Redirect back to the schedule view
+    redirect('/teacher/schedule?day=' . $subject['day']);
   }
 }

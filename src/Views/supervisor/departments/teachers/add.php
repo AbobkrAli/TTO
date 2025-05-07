@@ -78,8 +78,11 @@ ob_start();
               <div class="col-md-6">
                 <label for="role" class="form-label">Role</label>
                 <select class="form-select" id="role" name="role">
-                  <option value="teacher" selected>Teacher</option>
+                  <option value="teacher">Teacher</option>
+                  <option value="manager">Manager</option>
                 </select>
+                <div class="form-text">Select the role for this user. Managers have additional privileges in the
+                  department.</div>
                 <input type="hidden" name="department_id" value="<?php echo $department['id']; ?>">
               </div>
             </div>

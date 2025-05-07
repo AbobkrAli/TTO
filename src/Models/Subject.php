@@ -114,11 +114,7 @@ class Subject
   public function create($subjectCode, $subjectName, $departmentId, $day, $hour, $classId, $isOfficeHour = false, $requestId = null, $teacherId = null)
   {
     try {
-      // Check if subject with same code exists in department (skip for office hours)
-      if (!$isOfficeHour && $this->existsInDepartment($subjectCode, $departmentId)) {
-        throw new \Exception("A subject with code '{$subjectCode}' already exists in this department");
-      }
-
+      // Remove the subject code uniqueness check
       $sql = "INSERT INTO subjects (subject_code, name, department_id, day, hour, class_id, is_office_hour, request_id, teacher_id) 
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
       $result = $this->db->query($sql, [

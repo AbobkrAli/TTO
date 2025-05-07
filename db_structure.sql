@@ -143,7 +143,7 @@ CREATE TABLE `users` (
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `role` enum('teacher','supervisor') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `role` enum('teacher','manager','supervisor') COLLATE utf8mb4_unicode_ci NOT NULL,
   `department_id` int DEFAULT NULL COMMENT 'Department the user belongs to (can be NULL for supervisors)',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

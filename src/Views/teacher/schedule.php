@@ -156,21 +156,85 @@ ob_start();
   }
 </style>
 
+<script>
+  function printSchedule() {
+    // Create a new window
+    const printWindow = window.open('', '_blank');
+
+    // Get the schedule content
+    const scheduleContent = document.querySelector('.table-responsive').cloneNode(true);
+
+    // Remove interactive elements
+    scheduleContent.querySelectorAll('.add-request-btn').forEach(btn => btn.remove());
+    scheduleContent.querySelectorAll('.btn-close').forEach(btn => btn.remove());
+    scheduleContent.querySelectorAll('.request-badge').forEach(badge => badge.remove());
+    scheduleContent.querySelectorAll('.btn-outline-danger').forEach(btn => btn.remove());
+    scheduleContent.querySelectorAll('.btn-danger').forEach(btn => btn.remove()); // Remove delete buttons
+
+    // Write the content to the new window
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Schedule - <?= $selectedDay ?></title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+          body { padding: 20px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .header h1 { font-size: 24px; margin-bottom: 5px; }
+          .header p { font-size: 14px; color: #666; }
+          .table { width: 100%; margin-bottom: 0; }
+          .table th { background-color: #f8f9fa; }
+          .time-slot { min-height: 60px; }
+          .subject-item { 
+            background-color: rgba(37, 117, 252, 0.1);
+            border-left: 3px solid #2575fc;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 8px;
+          }
+          .subject-title { font-weight: bold; }
+          .subject-meta { font-size: 12px; color: #666; }
+          @media print {
+            .no-print { display: none; }
+            body { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1><?= isset($user['department_name']) ? htmlspecialchars($user['department_name']) : 'Department Schedule' ?></h1>
+          <p><?= $selectedDay ?> Schedule</p>
+          <p>Printed on: ${new Date().toLocaleDateString()}</p>
+        </div>
+        ${scheduleContent.outerHTML}
+        <div class="text-center mt-4 no-print">
+          <button onclick="window.print()" class="btn btn-primary me-2">Print</button>
+          <button onclick="window.close()" class="btn btn-secondary">Close</button>
+        </div>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+  }
+</script>
+
 <div class="container-fluid py-4">
   <?php if (isset($_SESSION['success'])): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-      <?= $_SESSION['success'] ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    <?php unset($_SESSION['success']); ?>
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <?= $_SESSION['success'] ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <?php unset($_SESSION['success']); ?>
   <?php endif; ?>
 
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <?= $_SESSION['error'] ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    <?php unset($_SESSION['error']); ?>
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <?= $_SESSION['error'] ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <?php unset($_SESSION['error']); ?>
   <?php endif; ?>
 
   <!-- Department Schedule Card -->
@@ -188,16 +252,19 @@ ob_start();
     </div>
 
     <!-- Day Navigation -->
-    <div class="day-nav">
-      <div class="btn-group d-flex" role="group">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="btn-group" role="group">
         <?php
         $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
         foreach ($days as $day) {
-          $active = ($selectedDay === $day) ? 'active' : '';
-          echo '<a href="/teacher/schedule?day=' . $day . '" class="btn btn-outline-primary ' . $active . '">' . $day . '</a>';
+          $active = ($selectedDay === $day) ? 'btn-primary' : 'btn-outline-primary';
+          echo '<a href="/teacher/schedule?day=' . $day . '" class="btn ' . $active . '">' . $day . '</a>';
         }
         ?>
       </div>
+      <button onclick="printSchedule()" class="btn btn-warning">
+        <i class="bi bi-printer"></i> Print Schedule
+      </button>
     </div>
 
     <!-- Schedule Content -->
@@ -235,7 +302,12 @@ ob_start();
                   if (!isset($scheduledSubjects[$day][$hour])) {
                     $scheduledSubjects[$day][$hour] = [];
                   }
-                  $scheduledSubjects[$day][$hour] = $hourSubjects;
+                  // Filter subjects to only include those assigned to the current teacher
+                  foreach ($hourSubjects as $subject) {
+                    if (isset($subject['teacher_id']) && $subject['teacher_id'] == $_SESSION['user_id']) {
+                      $scheduledSubjects[$day][$hour][] = $subject;
+                    }
+                  }
                 }
               }
             }
@@ -244,7 +316,7 @@ ob_start();
             $pendingRequests = [];
             if (isset($requests) && is_array($requests)) {
               foreach ($requests as $request) {
-                if ($request['status'] === 'pending') {
+                if ($request['status'] === 'pending' && $request['teacher_id'] == $_SESSION['user_id']) {
                   // Check if required keys exist
                   if (!isset($request['day']) || !isset($request['hour'])) {
                     continue; // Skip this request if required keys are missing
@@ -284,14 +356,6 @@ ob_start();
                   echo htmlspecialchars($subject['subject_code']);
                   echo '</div>';
 
-                  // Teacher Info
-                  if (!empty($subject['teacher_name'])) {
-                    echo '<div class="subject-meta-item">';
-                    echo '<i class="bi bi-person-circle"></i> ';
-                    echo htmlspecialchars($subject['teacher_name']);
-                    echo '</div>';
-                  }
-
                   // Class Info
                   if (!empty($subject['class_name'])) {
                     echo '<div class="subject-meta-item">';
@@ -301,6 +365,16 @@ ob_start();
                   }
 
                   echo '</div>'; // Close subject-meta
+            
+                  // Add delete button
+                  echo '<div class="d-flex justify-content-end mt-2">';
+                  echo '<a href="/teacher/subjects/delete/' . $subject['id'] . '" 
+                            class="btn btn-sm btn-danger" 
+                            onclick="return confirm(\'Are you sure you want to delete this subject?\');">';
+                  echo '<i class="bi bi-trash"></i> Delete';
+                  echo '</a>';
+                  echo '</div>';
+
                   echo '</div>'; // Close subject-item
                 }
 
@@ -419,67 +493,67 @@ ob_start();
     </div>
     <div class="card-body">
       <?php if (empty($requests)): ?>
-        <p class="text-muted text-center py-3">You haven't made any schedule requests yet.</p>
+      <p class="text-muted text-center py-3">You haven't made any schedule requests yet.</p>
       <?php else: ?>
-        <div class="table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Day</th>
-                <th>Time</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>Requested On</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php
-              // Get only the last 10 requests
-              $recentRequests = array_slice($requests, 0, 10);
-              foreach ($recentRequests as $request):
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Time</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>Requested On</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            // Get only the last 10 requests
+            $recentRequests = array_slice($requests, 0, 10);
+            foreach ($recentRequests as $request):
+              ?>
+            <tr>
+              <td><?= htmlspecialchars($request['day']) ?></td>
+              <td><?= $timeSlots[$request['hour']] ?></td>
+              <td>
+                <?php if (!empty($request['subject_name'])): ?>
+                <?= htmlspecialchars($request['subject_name']) ?>
+                <?php if (!empty($request['subject_code'])): ?>
+                <small class="text-muted d-block"><?= htmlspecialchars($request['subject_code']) ?></small>
+                <?php endif; ?>
+                <?php else: ?>
+                <span class="text-muted">Time slot request</span>
+                <?php endif; ?>
+              </td>
+              <td>
+                <?php
+                $statusClass = 'request-status-pending';
+                if ($request['status'] === 'approved') {
+                  $statusClass = 'request-status-approved';
+                } elseif ($request['status'] === 'rejected') {
+                  $statusClass = 'request-status-rejected';
+                }
                 ?>
-                <tr>
-                  <td><?= htmlspecialchars($request['day']) ?></td>
-                  <td><?= $timeSlots[$request['hour']] ?></td>
-                  <td>
-                    <?php if (!empty($request['subject_name'])): ?>
-                      <?= htmlspecialchars($request['subject_name']) ?>
-                      <?php if (!empty($request['subject_code'])): ?>
-                        <small class="text-muted d-block"><?= htmlspecialchars($request['subject_code']) ?></small>
-                      <?php endif; ?>
-                    <?php else: ?>
-                      <span class="text-muted">Time slot request</span>
-                    <?php endif; ?>
-                  </td>
-                  <td>
-                    <?php
-                    $statusClass = 'request-status-pending';
-                    if ($request['status'] === 'approved') {
-                      $statusClass = 'request-status-approved';
-                    } elseif ($request['status'] === 'rejected') {
-                      $statusClass = 'request-status-rejected';
-                    }
-                    ?>
-                    <span class="request-status <?= $statusClass ?>"><?= ucfirst($request['status']) ?></span>
-                  </td>
-                  <td><?= date('M d, Y', strtotime($request['created_at'])) ?></td>
-                  <td>
-                    <?php if ($request['status'] === 'pending'): ?>
-                      <a href="/teacher/requests/cancel/<?= $request['id'] ?>" class="btn btn-sm btn-outline-danger"
-                        onclick="return confirm('Are you sure you want to cancel this request?');">
-                        Cancel
-                      </a>
-                    <?php else: ?>
-                      -
-                    <?php endif; ?>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+                <span class="request-status <?= $statusClass ?>"><?= ucfirst($request['status']) ?></span>
+              </td>
+              <td><?= date('M d, Y', strtotime($request['created_at'])) ?></td>
+              <td>
+                <?php if ($request['status'] === 'pending'): ?>
+                <a href="/teacher/requests/cancel/<?= $request['id'] ?>" class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('Are you sure you want to cancel this request?');">
+                  Cancel
+                </a>
+                <?php else: ?>
+                -
+                <?php endif; ?>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
 
-        </div>
+      </div>
       <?php endif; ?>
     </div>
   </div>
@@ -490,44 +564,40 @@ ob_start();
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Request Schedule Slot</h5>
+        <h5 class="modal-title">Add Subject</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <form action="/teacher/requests/create" method="POST">
+        <form id="requestForm" action="/teacher/requests/create" method="POST">
           <input type="hidden" name="day" id="requestDay">
           <input type="hidden" name="hour" id="requestHour">
 
           <div class="mb-3">
-            <label class="form-label">Selected Time:</label>
-            <div class="form-control bg-light" id="displayTime" readonly></div>
+            <label for="subject_id" class="form-label">Select Subject</label>
+            <select class="form-select" id="subject_id" name="subject_id" required>
+              <option value="">-- Select Subject --</option>
+              <?php foreach ($optionalSubjects as $subject): ?>
+              <option value="<?= $subject['id'] ?>" data-code="<?= htmlspecialchars($subject['subject_code']) ?>"
+                data-name="<?= htmlspecialchars($subject['name']) ?>">
+                <?= htmlspecialchars($subject['subject_code']) ?> - <?= htmlspecialchars($subject['name']) ?>
+              </option>
+              <?php endforeach; ?>
+            </select>
           </div>
 
           <div class="mb-3">
-            <label for="subject_code" class="form-label">Subject Code</label>
-            <input type="text" class="form-control" id="subject_code" name="subject_code" required>
-            <div class="form-text">Enter the subject code for your request.</div>
-          </div>
-
-          <div class="mb-3">
-            <label for="subject_name" class="form-label">Subject Name</label>
-            <input type="text" class="form-control" id="subject_name" name="subject_name" required>
-            <div class="form-text">Enter the subject name for your request.</div>
-          </div>
-
-          <div class="mb-3">
-            <label for="class_id" class="form-label">Class</label>
+            <label for="class_id" class="form-label">Select Class</label>
             <select class="form-select" id="class_id" name="class_id" required>
               <option value="">-- Select Class --</option>
               <?php foreach ($classes as $class): ?>
-                <option value="<?= $class['id'] ?>"><?= htmlspecialchars($class['name']) ?></option>
+              <option value="<?= $class['id'] ?>"><?= htmlspecialchars($class['name']) ?></option>
               <?php endforeach; ?>
             </select>
-            <div class="form-text">Select the class for this subject.</div>
           </div>
 
-          <div class="d-grid">
-            <button type="submit" class="btn btn-primary">Submit Request</button>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Subject</button>
           </div>
         </form>
       </div>
@@ -554,6 +624,60 @@ ob_start();
         requestHourInput.value = hour;
         displayTimeElement.textContent = `${day} at ${time}`;
       });
+    });
+
+    // Handle request form submission
+    document.getElementById('requestForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const form = this;
+      const formData = new FormData(form);
+
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Show success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+              ${data.message}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
+
+            // Close modal and reload page
+            const modal = bootstrap.Modal.getInstance(document.getElementById('requestModal'));
+            modal.hide();
+            window.location.reload();
+          } else {
+            // Show error message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+              ${data.message}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          // Show error message
+          const alertDiv = document.createElement('div');
+          alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+          alertDiv.innerHTML = `
+            An error occurred while submitting the request. Please try again.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          `;
+          document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
+        });
     });
   });
 </script>

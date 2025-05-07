@@ -1,4 +1,4 @@
-# PHP School Management System
+# TTO
 
 A simple PHP project for school management with different user roles (supervisor and teacher).
 

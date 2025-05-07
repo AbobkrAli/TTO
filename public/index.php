@@ -134,6 +134,21 @@ try {
       $controller->removeTeacher($matches[1], $matches[2]);
       break;
 
+    // Optional Subjects routes
+    case (preg_match('/^supervisor\/departments\/(\d+)\/optional-subjects$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $controller->addOptionalSubject($matches[1]);
+      } else {
+        redirect('/supervisor/departments/view/' . $matches[1] . '#optional-subjects');
+      }
+      break;
+
+    case (preg_match('/^supervisor\/departments\/(\d+)\/optional-subjects\/delete\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\SupervisorController();
+      $controller->deleteOptionalSubject($matches[1], $matches[2]);
+      break;
+
     // Subject routes
     case (preg_match('/^supervisor\/departments\/(\d+)\/subjects\/add$/', $path, $matches) ? true : false):
       $controller = new \App\Controllers\SupervisorController();
@@ -167,9 +182,20 @@ try {
       $controller->dashboard();
       break;
 
+    // Manager routes
+    case 'manager/dashboard':
+      $controller = new \App\Controllers\ManagerController();
+      $controller->dashboard();
+      break;
+
     case 'teacher/schedule':
       $controller = new \App\Controllers\TeacherController();
       $controller->departmentSchedule();
+      break;
+
+    case (preg_match('/^teacher\/subjects\/delete\/(\d+)$/', $path, $matches) ? true : false):
+      $controller = new \App\Controllers\TeacherController();
+      $controller->deleteSubject($matches[1]);
       break;
 
     case 'teacher/requests/create':
@@ -190,72 +216,6 @@ try {
     case 'teacher/profile/edit':
       $controller = new \App\Controllers\TeacherController();
       $controller->updateProfile();
-      break;
-
-    // Supervisor routes
-    case 'supervisor/users/add':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->addUser();
-      break;
-
-    case 'supervisor/users/edit/{id}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->editUser($id);
-      break;
-
-    case 'supervisor/users/delete/{id}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->deleteUser($id);
-      break;
-
-    case 'supervisor/departments/add':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->addDepartment();
-      break;
-
-    case 'supervisor/departments/edit/{id}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->editDepartment($id);
-      break;
-
-    case 'supervisor/departments/delete/{id}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->deleteDepartment($id);
-      break;
-
-    case 'supervisor/departments/view/{id}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->viewDepartment($id);
-      break;
-
-    case 'supervisor/departments/{id}/subjects/add':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->addSubject($id);
-      break;
-
-    case 'supervisor/departments/{id}/subjects/edit/{subjectId}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->editSubject($subjectId);
-      break;
-
-    case 'supervisor/departments/{id}/subjects/delete/{subjectId}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->deleteSubject($subjectId);
-      break;
-
-    case 'supervisor/requests':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->requests();
-      break;
-
-    case 'supervisor/requests/view/{id}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->viewRequest($id);
-      break;
-
-    case 'supervisor/requests/respond/{id}':
-      $controller = new \App\Controllers\SupervisorController();
-      $controller->respondToRequest($id);
       break;
 
     case 'supervisor/classes':

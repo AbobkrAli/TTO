@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - School Management System</title>
+  <title>Login - TTO</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Include error-handling script first -->
   <script src="/js/console-error-fix.js"></script>
@@ -46,7 +46,9 @@
 <body class="text-center">
   <main class="form-signin">
     <form action="/login" method="post">
-      <h1 class="h3 mb-3 fw-normal">School Management System</h1>
+      <div class="text-center">
+        <h1 class="h3 mb-3 fw-normal">TTO</h1>
+      </div>
       <h2 class="h5 mb-3 fw-normal">Please sign in</h2>
 
       <?php if (isset($error)): ?>

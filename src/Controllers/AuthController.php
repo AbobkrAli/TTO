@@ -62,6 +62,8 @@ class AuthController extends Controller
         // Redirect based on role
         if ($user['role'] === 'supervisor') {
           redirect('/supervisor/dashboard');
+        } else if ($user['role'] === 'manager') {
+          redirect('/manager/dashboard');
         } else {
           redirect('/teacher/dashboard');
         }

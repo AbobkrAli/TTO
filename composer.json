@@ -1,6 +1,6 @@
 {
-  "name": "abobkr/mo-elsayed",
-  "description": "School Management System",
+  "name": "abobkr/school-management",
+  "description": "TTO",
   "type": "project",
   "require": {
     "php": "^8.1",
