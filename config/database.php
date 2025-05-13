@@ -1,11 +1,11 @@
 <?php
 
 return [
-  'host' => 'interchange.proxy.rlwy.net',
-  'port' => 23554,
+  'host' => 'caboose.proxy.rlwy.net',
+  'port' => 12570,
   'database' => 'railway',
   'username' => 'root',
-  'password' => 'auqVyHkslaLKIohEAyqHpQWgRAknUVno',
+  'password' => 'yuHPIfVykOUfHMEUWQTIHToShgwmMSyn',
   'charset' => 'utf8mb4',
   'options' => [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
