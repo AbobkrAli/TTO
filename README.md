@@ -1,4 +1,4 @@
-# TTO
+# TTO System
 
 A simple PHP project for college management with different user roles (supervisor and teacher).
 
